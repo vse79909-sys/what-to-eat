@@ -80,10 +80,10 @@
           <h1 class="text-lg font-black text-slate-900 flex items-center gap-2">
             《吃什么》大厨专属管理工作台
             <span class="text-xs px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 font-bold border border-brand-200">
-              UI 视觉调优 · 菜谱中枢
+              菜谱中枢 · 分类管理 · 实时真机预览
             </span>
           </h1>
-          <p class="text-xs text-slate-400">实时调整手机端 UI 视觉与密度 · 统一管理 22 道实拍家常菜</p>
+          <p class="text-xs text-slate-400">统一管理 22 道实拍家常菜 · 分类自定义 · 实时联动移动端</p>
         </div>
       </div>
 
@@ -115,10 +115,7 @@
 
         <!-- 选项卡导航 -->
         <div class="flex items-center gap-1.5 bg-slate-200/80 p-1.5 rounded-2xl">
-          <button onclick="switchAdminTab('ui')" id="btn-tab-ui" class="admin-nav-btn active flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
-            <i data-lucide="palette" class="w-4 h-4"></i> 🎨 手机 UI 视觉调优
-          </button>
-          <button onclick="switchAdminTab('dishes')" id="btn-tab-dishes" class="admin-nav-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
+          <button onclick="switchAdminTab('dishes')" id="btn-tab-dishes" class="admin-nav-btn active flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
             <i data-lucide="utensils" class="w-4 h-4"></i> 🍲 菜谱管理 (<span id="tab-dish-count">22</span>)
           </button>
           <button onclick="switchAdminTab('categories')" id="btn-tab-categories" class="admin-nav-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
@@ -129,140 +126,8 @@
           </button>
         </div>
 
-        <!-- 1. 手机 UI 视觉调优面板 (UI Customizer) -->
-        <div id="panel-ui" class="space-y-4">
-          <!-- 核心提示 -->
-          <div class="bg-gradient-to-r from-amber-500/10 via-brand-500/10 to-rose-500/10 border border-brand-200/80 rounded-2xl p-4 flex items-center justify-between">
-            <div>
-              <h2 class="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                <i data-lucide="sparkles" class="w-4 h-4 text-brand-500"></i>
-                手机端视觉与排版定制器
-              </h2>
-              <p class="text-xs text-slate-500 mt-0.5">您在此处调试任何参数，右侧真机视窗将<b>即时联动更新</b>！满意后随时随地在手机查看。</p>
-            </div>
-            <button onclick="saveUiSettings()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/25 active:scale-95 transition-all flex items-center gap-1">
-              <i data-lucide="check" class="w-3.5 h-3.5"></i> 保存 UI 设定
-            </button>
-          </div>
-
-          <!-- 参数 1：间距密度 (解决拥挤的核心) -->
-          <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-xs font-black text-slate-800">1. 界面排版密度（告别拥挤）</h3>
-                <p class="text-[11px] text-slate-400">调整卡片内边距、行间距与触摸面积</p>
-              </div>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-bold">即时生效</span>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="cursor-pointer border-2 rounded-xl p-3 flex flex-col justify-between transition-all hover:bg-slate-50 ui-option-density" data-value="comfortable">
-                <input type="radio" name="ui-density" value="comfortable" class="hidden" onchange="previewUiChange()">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-black text-slate-800">🌿 宽松舒适 (强烈推荐)</span>
-                  <span class="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center density-indicator"></span>
-                </div>
-                <p class="text-[11px] text-slate-400 leading-relaxed">扩大卡片呼吸空间，日期与菜品按钮宽松易点，手机上绝不逼仄。</p>
-              </label>
-
-              <label class="cursor-pointer border-2 rounded-xl p-3 flex flex-col justify-between transition-all hover:bg-slate-50 ui-option-density" data-value="compact">
-                <input type="radio" name="ui-density" value="compact" class="hidden" onchange="previewUiChange()">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-black text-slate-800">📦 经典紧凑</span>
-                  <span class="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center density-indicator"></span>
-                </div>
-                <p class="text-[11px] text-slate-400 leading-relaxed">元素排列更密集，单屏内显示更多菜品信息。</p>
-              </label>
-            </div>
-          </div>
-
-          <!-- 参数 2：菜品大厅呈现方式 -->
-          <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-xs font-black text-slate-800">2. 菜品大厅卡片排版</h3>
-                <p class="text-[11px] text-slate-400">选择移动端菜品库以单列大图还是双列并排展示</p>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="cursor-pointer border-2 rounded-xl p-3 flex flex-col justify-between transition-all hover:bg-slate-50 ui-option-layout" data-value="single-col">
-                <input type="radio" name="ui-layout" value="single-col" class="hidden" onchange="previewUiChange()">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-black text-slate-800">📱 沉浸大卡片 (单列大图)</span>
-                  <span class="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center layout-indicator"></span>
-                </div>
-                <p class="text-[11px] text-slate-400 leading-relaxed">左侧高清缩略图，右侧菜名标签与快速点菜，最显高级宽敞。</p>
-              </label>
-
-              <label class="cursor-pointer border-2 rounded-xl p-3 flex flex-col justify-between transition-all hover:bg-slate-50 ui-option-layout" data-value="double-col">
-                <input type="radio" name="ui-layout" value="double-col" class="hidden" onchange="previewUiChange()">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-black text-slate-800">🍱 精致双拼 (经典双列)</span>
-                  <span class="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center layout-indicator"></span>
-                </div>
-                <p class="text-[11px] text-slate-400 leading-relaxed">传统双列瀑布流排列，一屏纵览更多菜品。</p>
-              </label>
-            </div>
-          </div>
-
-          <!-- 参数 3：界面主题配色 -->
-          <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3">
-            <h3 class="text-xs font-black text-slate-800">3. 手机端主色调风格</h3>
-            <div class="grid grid-cols-4 gap-2.5">
-              <button onclick="setTheme('orange')" class="theme-btn p-3 rounded-xl border-2 text-center transition-all flex flex-col items-center gap-1.5" data-theme="orange">
-                <div class="w-7 h-7 rounded-full bg-orange-500 shadow-sm"></div>
-                <span class="text-xs font-bold text-slate-800">暖阳橙</span>
-                <span class="text-[10px] text-slate-400">经典食欲</span>
-              </button>
-              <button onclick="setTheme('green')" class="theme-btn p-3 rounded-xl border-2 text-center transition-all flex flex-col items-center gap-1.5" data-theme="green">
-                <div class="w-7 h-7 rounded-full bg-emerald-500 shadow-sm"></div>
-                <span class="text-xs font-bold text-slate-800">自然绿</span>
-                <span class="text-[10px] text-slate-400">清新治愈</span>
-              </button>
-              <button onclick="setTheme('pink')" class="theme-btn p-3 rounded-xl border-2 text-center transition-all flex flex-col items-center gap-1.5" data-theme="pink">
-                <div class="w-7 h-7 rounded-full bg-rose-500 shadow-sm"></div>
-                <span class="text-xs font-bold text-slate-800">樱花粉</span>
-                <span class="text-[10px] text-slate-400">甜蜜情侣</span>
-              </button>
-              <button onclick="setTheme('stone')" class="theme-btn p-3 rounded-xl border-2 text-center transition-all flex flex-col items-center gap-1.5" data-theme="stone">
-                <div class="w-7 h-7 rounded-full bg-slate-600 shadow-sm"></div>
-                <span class="text-xs font-bold text-slate-800">雅致灰</span>
-                <span class="text-[10px] text-slate-400">极简北欧</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- 参数 4：圆角与字号调节 -->
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-2">
-              <h3 class="text-xs font-black text-slate-800">4. 卡片圆角</h3>
-              <select id="select-radius" onchange="previewUiChange()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
-                <option value="large">优雅大圆角 (24px - 柔和现代)</option>
-                <option value="medium">标准圆角 (16px)</option>
-                <option value="small">轻微圆角 (10px)</option>
-              </select>
-            </div>
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-2">
-              <h3 class="text-xs font-black text-slate-800">5. 字体字号缩放</h3>
-              <select id="select-font-size" onchange="previewUiChange()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
-                <option value="standard">标准大小 (100% 推荐)</option>
-                <option value="large">舒适微放大 (+10% 更清晰)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- 重置与保存按钮组 -->
-          <div class="flex items-center justify-between pt-2">
-            <button onclick="resetDefaultUi()" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800">
-              恢复系统默认 UI
-            </button>
-            <button onclick="saveUiSettings()" class="px-6 py-2.5 bg-gradient-to-r from-brand-500 to-amber-500 hover:opacity-95 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all flex items-center gap-1.5">
-              <i data-lucide="check-circle" class="w-4 h-4"></i> 保存并应用所有 UI 设定
-            </button>
-          </div>
-        </div>
-
-        <!-- 2. 菜谱管理面板 (Dishes Manager) -->
-        <div id="panel-dishes" class="hidden space-y-4">
+        <!-- 1. 菜谱管理面板 (Dishes Manager) -->
+        <div id="panel-dishes" class="space-y-4">
           <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex items-center gap-2 flex-1">
               <div class="relative flex-1 max-w-xs">
@@ -392,7 +257,7 @@
 
         <!-- 提示信息 -->
         <p class="text-[11px] text-slate-400 text-center mt-3 max-w-xs">
-          💡 提示：您可直接在右侧手机里点击点菜、切换周排餐；在左侧改动任何 UI 风格，右侧即时同步呈现！
+          💡 提示：您可直接在右侧手机里点击点菜、切换周排餐；在左侧维护菜谱与分类，右侧即时同步呈现！
         </p>
 
       </div>

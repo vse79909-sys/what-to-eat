@@ -207,17 +207,8 @@ const DEFAULT_DISHES = [
   }
 ];
 
-const DEFAULT_UI_SETTINGS = {
-  density: 'comfortable', // 'comfortable' (宽松舒适) | 'compact' (紧凑)
-  dishLayout: 'single-col', // 'single-col' (单列大图) | 'double-col' (双列)
-  theme: 'orange', // 'orange' | 'green' | 'pink' | 'stone'
-  radius: 'large', // 'large' (24px) | 'medium' (16px) | 'small' (10px)
-  fontSize: 'standard' // 'standard' | 'large'
-};
-
 let adminState = {
-  activeTab: 'ui',
-  uiSettings: { ...DEFAULT_UI_SETTINGS },
+  activeTab: 'dishes',
   dishes: [],
   categories: [],
   mealPlans: {},
@@ -231,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initAdmin() {
   loadAdminStorage();
-  loadAdminUiSettings();
   renderAdminDishesTable();
   renderAdminCategoriesBadge();
   populateCategorySelects();
@@ -276,7 +266,7 @@ function saveAdminStorage() {
 // --- 后台选项卡切换 ---
 function switchAdminTab(tabName) {
   adminState.activeTab = tabName;
-  ['ui', 'dishes', 'categories', 'stats'].forEach(t => {
+  ['dishes', 'categories', 'stats'].forEach(t => {
     const panel = document.getElementById(`panel-${t}`);
     const btn = document.getElementById(`btn-tab-${t}`);
     if (panel) panel.classList.toggle('hidden', t !== tabName);
@@ -295,123 +285,6 @@ function switchAdminTab(tabName) {
   if (window.lucide) {
     lucide.createIcons();
   }
-}
-
-// --- 🎨 手机 UI 视觉调优引擎 ---
-function loadAdminUiSettings() {
-  try {
-    const saved = localStorage.getItem('wt_ui_settings');
-    adminState.uiSettings = saved ? { ...DEFAULT_UI_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_UI_SETTINGS };
-  } catch (e) {
-    adminState.uiSettings = { ...DEFAULT_UI_SETTINGS };
-  }
-
-  // 同步到表单控件
-  syncUiControlsToState();
-  // 预览一次
-  previewUiChange();
-}
-
-function syncUiControlsToState() {
-  const s = adminState.uiSettings;
-
-  // 密度单选
-  document.querySelectorAll('input[name="ui-density"]').forEach(radio => {
-    radio.checked = (radio.value === s.density);
-  });
-  updateOptionCards('ui-option-density', s.density);
-
-  // 布局单选
-  document.querySelectorAll('input[name="ui-layout"]').forEach(radio => {
-    radio.checked = (radio.value === s.dishLayout);
-  });
-  updateOptionCards('ui-option-layout', s.dishLayout);
-
-  // 主题按钮
-  document.querySelectorAll('.theme-btn').forEach(btn => {
-    const isAct = btn.dataset.theme === s.theme;
-    btn.classList.toggle('border-brand-500', isAct);
-    btn.classList.toggle('bg-brand-50/50', isAct);
-    btn.classList.toggle('border-slate-200', !isAct);
-  });
-
-  // 圆角下拉
-  const radiusSel = document.getElementById('select-radius');
-  if (radiusSel) radiusSel.value = s.radius;
-
-  // 字号下拉
-  const fontSel = document.getElementById('select-font-size');
-  if (fontSel) fontSel.value = s.fontSize;
-}
-
-function updateOptionCards(className, currentValue) {
-  document.querySelectorAll(`.${className}`).forEach(card => {
-    const isChecked = card.dataset.value === currentValue;
-    card.classList.toggle('border-brand-500', isChecked);
-    card.classList.toggle('bg-brand-50/40', isChecked);
-    card.classList.toggle('border-slate-200', !isChecked);
-
-    const dot = card.querySelector('span:last-child');
-    if (dot) {
-      dot.className = isChecked 
-        ? 'w-4 h-4 rounded-full bg-brand-500 border-2 border-white shadow-sm flex items-center justify-center'
-        : 'w-4 h-4 rounded-full border border-slate-300';
-    }
-  });
-}
-
-function previewUiChange() {
-  // 从界面收集当前配置
-  const densityRadio = document.querySelector('input[name="ui-density"]:checked');
-  const layoutRadio = document.querySelector('input[name="ui-layout"]:checked');
-  const radiusSel = document.getElementById('select-radius');
-  const fontSel = document.getElementById('select-font-size');
-
-  if (densityRadio) adminState.uiSettings.density = densityRadio.value;
-  if (layoutRadio) adminState.uiSettings.dishLayout = layoutRadio.value;
-  if (radiusSel) adminState.uiSettings.radius = radiusSel.value;
-  if (fontSel) adminState.uiSettings.fontSize = fontSel.value;
-
-  updateOptionCards('ui-option-density', adminState.uiSettings.density);
-  updateOptionCards('ui-option-layout', adminState.uiSettings.dishLayout);
-
-  // 向右侧手机 iframe 发送更新指令，毫秒级即时响应！
-  notifyPhonePreview({
-    type: 'WT_UPDATE_UI',
-    settings: adminState.uiSettings
-  });
-}
-
-function setTheme(themeName) {
-  adminState.uiSettings.theme = themeName;
-  document.querySelectorAll('.theme-btn').forEach(btn => {
-    const isAct = btn.dataset.theme === themeName;
-    btn.classList.toggle('border-brand-500', isAct);
-    btn.classList.toggle('bg-brand-50/50', isAct);
-    btn.classList.toggle('border-slate-200', !isAct);
-  });
-  previewUiChange();
-}
-
-function saveUiSettings() {
-  previewUiChange();
-  try {
-    localStorage.setItem('wt_ui_settings', JSON.stringify(adminState.uiSettings));
-    notifyPhonePreview({
-      type: 'WT_UPDATE_UI',
-      settings: adminState.uiSettings
-    });
-    showAdminToast('✨ 手机 UI 视觉设定已成功保存并实时生效！');
-  } catch (e) {
-    alert('保存设置失败');
-  }
-}
-
-function resetDefaultUi() {
-  adminState.uiSettings = { ...DEFAULT_UI_SETTINGS };
-  syncUiControlsToState();
-  saveUiSettings();
-  showAdminToast('已恢复为官方推荐的舒适宽敞 UI 风格！');
 }
 
 // --- 📱 与右侧真机预览窗口实时双向通讯 ---
