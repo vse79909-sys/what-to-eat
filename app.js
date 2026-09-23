@@ -558,7 +558,7 @@ function renderMealDishesList(dishIds = [], mealType) {
       <div class="py-7 flex flex-col items-center justify-center text-center text-stone-400 border border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
         <i data-lucide="cooking-pot" class="w-7 h-7 stroke-1 text-stone-300 mb-1.5"></i>
         <p class="text-xs font-bold text-stone-500">还空空如也呢</p>
-        <p class="text-[11px] text-stone-400 mt-0.5">快点击右上角“+ 点菜”为女朋友排餐吧</p>
+        <p class="text-[11px] text-stone-400 mt-0.5">快点击右上角“+ 点菜”排餐吧</p>
       </div>
     `;
   }
@@ -601,6 +601,7 @@ function removeDishFromMeal(mealType, index) {
 // --- 点菜选择器弹窗 ---
 function openDishPicker(mealType) {
   appState.pickerTargetMeal = mealType;
+  appState.activePickerCategoryFilter = '全部';
   const modal = document.getElementById('dish-picker-modal');
   const title = document.getElementById('picker-target-title');
   const search = document.getElementById('picker-search-input');
@@ -617,7 +618,9 @@ function openDishPicker(mealType) {
     search.value = '';
   }
 
-  renderPickerDishes(appState.dishes);
+  renderPickerCategoryFilterBar();
+  filterPickerDishes();
+
   if (modal) {
     modal.classList.remove('hidden');
   }
@@ -631,12 +634,46 @@ function closeDishPicker() {
   if (modal) modal.classList.add('hidden');
 }
 
+function renderPickerCategoryFilterBar() {
+  const container = document.getElementById('picker-category-filter-bar');
+  if (!container) return;
+
+  const currentCat = appState.activePickerCategoryFilter || '全部';
+  const allCats = ['全部', ...appState.categories];
+
+  container.innerHTML = allCats.map(cat => {
+    const isActive = currentCat === cat;
+    return `
+      <button type="button" onclick="setPickerCategoryFilter('${cat}')" 
+        class="px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+          isActive 
+            ? 'bg-brand-500 text-white shadow-xs' 
+            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+        }">
+        ${cat}
+      </button>
+    `;
+  }).join('');
+}
+
+function setPickerCategoryFilter(cat) {
+  appState.activePickerCategoryFilter = cat;
+  renderPickerCategoryFilterBar();
+  filterPickerDishes();
+}
+
 function filterPickerDishes() {
-  const keyword = (document.getElementById('picker-search-input').value || '').trim().toLowerCase();
+  const searchInput = document.getElementById('picker-search-input');
+  const keyword = (searchInput ? searchInput.value : '').trim().toLowerCase();
+  const currentCat = appState.activePickerCategoryFilter || '全部';
+
   const filtered = appState.dishes.filter(d => {
-    return d.name.toLowerCase().includes(keyword) ||
-           d.category.toLowerCase().includes(keyword) ||
-           (d.tags || []).some(t => t.toLowerCase().includes(keyword));
+    const matchCat = (currentCat === '全部') || (d.category === currentCat);
+    const matchKey = !keyword || 
+      d.name.toLowerCase().includes(keyword) ||
+      d.category.toLowerCase().includes(keyword) ||
+      (d.tags || []).some(t => t.toLowerCase().includes(keyword));
+    return matchCat && matchKey;
   });
   renderPickerDishes(filtered);
 }
