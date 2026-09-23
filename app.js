@@ -646,9 +646,14 @@ function quickAddToToday(dishId, mealType) {
   showToast(`已将【${dish ? dish.name : '菜品'}】加入排餐！`);
 }
 
-// --- 拍照 / 选图与压缩上传 ---
+// --- 拍照 / 本地相册选图与压缩上传 ---
 function triggerCameraInput() {
   const input = document.getElementById('camera-file-input');
+  if (input) input.click();
+}
+
+function triggerLocalFileInput() {
+  const input = document.getElementById('local-file-input');
   if (input) input.click();
 }
 
@@ -664,14 +669,15 @@ function handlePhotoUpload(event) {
       appState.tempUploadImage = compressedBase64;
       const previewImg = document.getElementById('photo-preview-img');
       const placeholder = document.getElementById('upload-placeholder');
-      const reBtn = document.getElementById('re-upload-btn');
+      const reGroup = document.getElementById('re-upload-group');
 
       if (previewImg) {
         previewImg.src = compressedBase64;
         previewImg.classList.remove('hidden');
       }
       if (placeholder) placeholder.classList.add('hidden');
-      if (reBtn) reBtn.classList.remove('hidden');
+      if (reGroup) reGroup.classList.remove('hidden');
+      showToast('照片已成功上传并高清优化！');
     });
   };
   reader.readAsDataURL(file);
@@ -761,9 +767,17 @@ function saveNewDish() {
   tagsInput.value = '';
   notesInput.value = '';
   appState.tempUploadImage = '';
-  document.getElementById('photo-preview-img').classList.add('hidden');
-  document.getElementById('upload-placeholder').classList.remove('hidden');
-  document.getElementById('re-upload-btn').classList.add('hidden');
+  const previewImg = document.getElementById('photo-preview-img');
+  const placeholder = document.getElementById('upload-placeholder');
+  const reGroup = document.getElementById('re-upload-group');
+  const camInput = document.getElementById('camera-file-input');
+  const localInput = document.getElementById('local-file-input');
+
+  if (previewImg) previewImg.classList.add('hidden');
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (reGroup) reGroup.classList.add('hidden');
+  if (camInput) camInput.value = '';
+  if (localInput) localInput.value = '';
 
   showToast(`🎉 成功收录【${name}】到菜谱库！`);
   switchTab('dishes');

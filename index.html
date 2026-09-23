@@ -196,9 +196,14 @@
     <section id="tab-dishes" class="tab-content hidden space-y-5">
       <!-- 搜索与筛选控制台 -->
       <div class="bg-white rounded-3xl border border-stone-200/80 p-4 shadow-soft space-y-3">
-        <div class="relative">
-          <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="search-dish-input" oninput="filterDishes()" placeholder="搜索菜名、食材或标签（如：鸡翅、辣、排骨）..." class="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="search-dish-input" oninput="filterDishes()" placeholder="搜索菜名、食材或标签（如：鸡翅、排骨）..." class="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+          </div>
+          <button onclick="switchTab('add')" class="px-3.5 py-2.5 bg-brand-500 text-white rounded-2xl text-xs font-bold shadow-sm shadow-brand-500/20 hover:bg-brand-600 flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-all">
+            <i data-lucide="plus" class="w-4 h-4"></i> 录入新菜
+          </button>
         </div>
         <!-- 分类筛选胶囊 -->
         <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar" id="category-filter-bar">
@@ -212,7 +217,7 @@
       </div>
     </section>
 
-    <!-- 3. 拍照录入面板 (Add Tab) -->
+    <!-- 3. 拍照/选图录入面板 (Add Tab) -->
     <section id="tab-add" class="tab-content hidden">
       <div class="bg-white rounded-3xl border border-stone-200/80 p-5 md:p-8 shadow-soft max-w-xl mx-auto space-y-6">
         <div>
@@ -220,25 +225,47 @@
             <i data-lucide="camera" class="w-6 h-6 text-brand-500"></i>
             记录一道新菜
           </h2>
-          <p class="text-xs text-stone-500 mt-1">刚出锅的菜拍一张，直接收录进你们的家庭专属菜单</p>
+          <p class="text-xs text-stone-500 mt-1">支持手机拍照录入或直接从本地相册上传图片</p>
         </div>
 
-        <!-- 拍照 / 选图上传区 -->
+        <!-- 拍照 / 本地相册选图上传区 -->
         <div>
-          <label class="block text-xs font-bold text-stone-700 mb-2">菜品实拍照片（支持手机直接拍照）*</label>
-          <div id="photo-upload-box" onclick="triggerCameraInput()" class="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-stone-300 hover:border-brand-500 bg-stone-50/80 flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group">
+          <label class="block text-xs font-bold text-stone-700 mb-2">菜品实拍照片（手机拍照或本地上传）*</label>
+          <div id="photo-upload-box" class="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-stone-300 bg-stone-50/80 flex flex-col items-center justify-center transition-all overflow-hidden relative group">
+            <!-- 手机现场拍照 input (带有 capture) -->
             <input type="file" id="camera-file-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoUpload(event)">
+            <!-- 本地相册 / 电脑本地文件 input (不带 capture) -->
+            <input type="file" id="local-file-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+            
             <img id="photo-preview-img" class="w-full h-full object-cover hidden" alt="菜品预览">
-            <div id="upload-placeholder" class="flex flex-col items-center text-center p-4">
-              <div class="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <i data-lucide="camera" class="w-7 h-7"></i>
+            
+            <div id="upload-placeholder" class="flex flex-col items-center text-center p-5 space-y-3">
+              <div class="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-1">
+                <i data-lucide="image" class="w-7 h-7"></i>
               </div>
-              <p class="text-sm font-bold text-stone-800">点击拍照或从相册选择</p>
-              <p class="text-xs text-stone-400 mt-1">手机会自动调起相机，自动高清压缩存储</p>
+              <div>
+                <p class="text-sm font-black text-stone-800">上传菜品实拍图</p>
+                <p class="text-xs text-stone-400 mt-0.5">请选择拍照或直接从本地相册/电脑上传：</p>
+              </div>
+              <div class="flex items-center gap-2.5 pt-1">
+                <button type="button" onclick="triggerCameraInput()" class="px-4 py-2 bg-gradient-to-r from-brand-500 to-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-brand-500/20 hover:opacity-90 active:scale-95 transition-all">
+                  <i data-lucide="camera" class="w-4 h-4"></i> 手机拍照
+                </button>
+                <button type="button" onclick="triggerLocalFileInput()" class="px-4 py-2 bg-stone-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-stone-700 active:scale-95 transition-all shadow-sm">
+                  <i data-lucide="upload" class="w-4 h-4"></i> 本地相册/选图
+                </button>
+              </div>
             </div>
-            <button id="re-upload-btn" onclick="event.stopPropagation(); triggerCameraInput();" class="hidden absolute bottom-3 right-3 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-black/80">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 重拍/更换
-            </button>
+
+            <!-- 已上传后的更换按钮组 -->
+            <div id="re-upload-group" class="hidden absolute bottom-3 right-3 flex items-center gap-2">
+              <button type="button" onclick="triggerCameraInput()" class="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-xl text-xs font-bold flex items-center gap-1">
+                <i data-lucide="camera" class="w-3.5 h-3.5"></i> 重拍
+              </button>
+              <button type="button" onclick="triggerLocalFileInput()" class="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-xl text-xs font-bold flex items-center gap-1">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i> 换本地图
+              </button>
+            </div>
           </div>
         </div>
 
