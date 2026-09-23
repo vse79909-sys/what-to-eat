@@ -4,7 +4,7 @@
  */
 
 // --- 菜谱版本与初始预置数据 ---
-const CURRENT_MENU_VERSION = '2026_09_23_v22';
+const CURRENT_MENU_VERSION = '2026_09_23_v24';
 
 const DEFAULT_CATEGORIES = ['家常荤菜', '清爽素菜', '拿手硬菜', '主食简餐'];
 
@@ -56,8 +56,8 @@ const DEFAULT_DISHES = [
   },
   {
     id: 'dish_06',
-    name: '洋葱黑椒炒肉段',
-    category: '家常荤菜',
+    name: '瓦香小酥肉',
+    category: '拿手硬菜',
     tags: ['浓郁黑椒', '肉嫩多汁', '下饭硬菜'],
     notes: '洋葱大火炒出清甜，肉段滑嫩鲜香黑椒风味十足',
     image: 'dishes/dish_06.jpg',
@@ -65,10 +65,10 @@ const DEFAULT_DISHES = [
   },
   {
     id: 'dish_07',
-    name: '地皮菜炒鸡蛋',
+    name: '外婆菜炒鸡蛋',
     category: '清爽素菜',
-    tags: ['山野时令', '鲜嫩多汁', '营养健康'],
-    notes: '地皮菜彻底清洗沥干，旺火翻炒，蛋香野香融合',
+    tags: ['经典湘味', '鲜嫩多汁', '开胃下饭'],
+    notes: '外婆菜彻底清洗沥干炒出香气，倒入蛋液旺火翻炒，蛋香咸香融合',
     image: 'dishes/dish_07.jpg',
     createdAt: Date.now() - 160000
   },
@@ -120,7 +120,7 @@ const DEFAULT_DISHES = [
   {
     id: 'dish_13',
     name: '香辣红烧鸡翅中',
-    category: '家常荤菜',
+    category: '拿手硬菜',
     tags: ['外焦里嫩', '女朋友最爱', '吮指留香'],
     notes: '翅中两面划花刀入味，煎至金黄后再红烧焖煮入味收汁',
     image: 'dishes/dish_13.jpg',
@@ -146,25 +146,25 @@ const DEFAULT_DISHES = [
   },
   {
     id: 'dish_16',
-    name: '酸辣炝炒藕片',
+    name: '清炒藕片',
     category: '清爽素菜',
-    tags: ['清脆爽口', '酸辣开胃', '解腻小菜'],
+    tags: ['清脆爽口', '清淡素雅', '解腻小菜'],
     notes: '莲藕切薄片过凉水洗净淀粉，干辣椒花椒大火炝炒清脆',
     image: 'dishes/dish_16.jpg',
     createdAt: Date.now() - 70000
   },
   {
     id: 'dish_17',
-    name: '包菜肉末炒粉丝',
-    category: '家常荤菜',
+    name: '包菜炒粉丝',
+    category: '清爽素菜',
     tags: ['根根爽滑', '喷香下饭', '经典家常'],
-    notes: '粉丝温水泡软，肉末煸香出油，包菜丝大火快炒合匀入味',
+    notes: '粉丝温水泡软，包菜丝大火快炒合匀入味，鲜香滑爽',
     image: 'dishes/dish_17.jpg',
     createdAt: Date.now() - 60000
   },
   {
     id: 'dish_18',
-    name: '下饭蒜苔炒肉片',
+    name: '蒜苔炒肉',
     category: '家常荤菜',
     tags: ['清甜爽脆', '肉丝滑嫩', '家常必点'],
     notes: '蒜苔煸炒至微现虎皮，肉片提前浆好滑油，鲜香可口',
@@ -173,10 +173,10 @@ const DEFAULT_DISHES = [
   },
   {
     id: 'dish_19',
-    name: '东北豆角土豆炖粉条',
-    category: '拿手硬菜',
+    name: '豆角土豆炖粉条',
+    category: '清爽素菜',
     tags: ['浓油热乎', '大锅炖菜', '冬日暖胃'],
-    notes: '五花肉煸出油脂炒香豆角，加土豆粉条大火烧开转慢炖入味',
+    notes: '豆角充分炒透，加土豆粉条大火烧开转慢炖入味软烂',
     image: 'dishes/dish_19.jpg',
     createdAt: Date.now() - 40000
   },
@@ -191,10 +191,10 @@ const DEFAULT_DISHES = [
   },
   {
     id: 'dish_21',
-    name: '香辣葱姜炒花蛤',
+    name: '香辣花甲',
     category: '拿手硬菜',
     tags: ['鲜美多汁', '夜宵大排档', '无沙开胃'],
-    notes: '花蛤提前加香油和盐充分吐沙，大火葱姜爆炒至壳刚张开',
+    notes: '花甲提前加香油和盐充分吐沙，大火葱姜爆炒至壳刚张开',
     image: 'dishes/dish_21.jpg',
     createdAt: Date.now() - 20000
   },
