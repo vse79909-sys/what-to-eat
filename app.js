@@ -730,7 +730,7 @@ function surpriseMealPlan() {
   saveToStorage();
   renderCurrentDayMeals();
   renderWeekSelector();
-  showToast(`盲盒摇号成功！已为今天${targetMeal === 'lunch' ? '午餐' : '晚餐'}自动搭配了 3 道菜！✨`);
+  showToast(`菜单已安排！已为今天${targetMeal === 'lunch' ? '午餐' : '晚餐'}自动搭配了 3 道美味！✨`);
 }
 
 // --- 菜品大厅与分类筛选 ---
