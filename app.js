@@ -956,15 +956,27 @@ function handlePhotoUpload(event) {
       appState.tempUploadImage = compressedBase64;
       const previewImg = document.getElementById('photo-preview-img');
       const placeholder = document.getElementById('upload-placeholder');
-      const reGroup = document.getElementById('re-upload-group');
+      const reGroup = document.getElementById('reupload-overlay');
 
       if (previewImg) {
         previewImg.src = compressedBase64;
         previewImg.classList.remove('hidden');
       }
       if (placeholder) placeholder.classList.add('hidden');
-      if (reGroup) reGroup.classList.remove('hidden');
-      showToast('照片已成功上传并高清优化！');
+      if (reGroup) {
+        reGroup.classList.remove('hidden');
+        reGroup.classList.add('flex');
+      }
+      showToast('📸 照片已就绪！请填写菜名后点击下方保存');
+
+      // 拍完照后自动平滑滚动并聚焦到菜名输入框
+      const nameInput = document.getElementById('new-dish-name');
+      if (nameInput) {
+        setTimeout(() => {
+          nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          nameInput.focus();
+        }, 350);
+      }
     });
   };
   reader.readAsDataURL(file);
@@ -1053,13 +1065,16 @@ function saveNewDish() {
   appState.tempUploadImage = '';
   const previewImg = document.getElementById('photo-preview-img');
   const placeholder = document.getElementById('upload-placeholder');
-  const reGroup = document.getElementById('re-upload-group');
+  const reGroup = document.getElementById('reupload-overlay');
   const camInput = document.getElementById('camera-file-input');
   const localInput = document.getElementById('local-file-input');
 
   if (previewImg) previewImg.classList.add('hidden');
   if (placeholder) placeholder.classList.remove('hidden');
-  if (reGroup) reGroup.classList.add('hidden');
+  if (reGroup) {
+    reGroup.classList.add('hidden');
+    reGroup.classList.remove('flex');
+  }
   if (camInput) camInput.value = '';
   if (localInput) localInput.value = '';
 
