@@ -222,17 +222,80 @@ let appState = {
   tempUploadImage: '' // 临时拍照压缩后的 base64
 };
 
+// --- UI 视觉与排版引擎配置 ---
+const DEFAULT_UI_SETTINGS = {
+  density: 'comfortable', // 'comfortable' (宽松舒适) | 'compact' (紧凑)
+  dishLayout: 'double-col', // 'double-col' (精致双列) | 'single-col' (单列大图)
+  theme: 'orange', // 'orange' | 'green' | 'pink' | 'stone'
+  radius: 'large', // 'large' (24px) | 'medium' (16px) | 'small' (10px)
+  fontSize: 'standard' // 'standard' | 'large'
+};
+
+function loadUiSettings() {
+  try {
+    const saved = localStorage.getItem('wt_ui_settings');
+    const settings = saved ? { ...DEFAULT_UI_SETTINGS, ...JSON.parse(saved) } : DEFAULT_UI_SETTINGS;
+    applyUiSettings(settings);
+    return settings;
+  } catch (e) {
+    applyUiSettings(DEFAULT_UI_SETTINGS);
+    return DEFAULT_UI_SETTINGS;
+  }
+}
+
+function applyUiSettings(settings) {
+  if (!settings) return;
+  const classes = [];
+  classes.push(settings.density === 'compact' ? 'density-compact' : 'density-comfortable');
+  if (settings.dishLayout === 'single-col') classes.push('layout-single-col');
+  if (settings.theme) classes.push(`theme-${settings.theme}`);
+  if (settings.radius) classes.push(`radius-${settings.radius}`);
+  if (settings.fontSize === 'large') classes.push('font-large');
+
+  document.documentElement.className = classes.join(' ');
+  if (document.body) {
+    document.body.className = `bg-cream text-stone-800 min-h-screen pb-24 md:pb-12 font-sans antialiased selection:bg-brand-100 ${classes.join(' ')}`;
+  }
+}
+
+// 监听跨页面 / iframe 消息（来自后台管理模拟器）
+window.addEventListener('message', (event) => {
+  if (!event.data) return;
+  if (event.data.type === 'WT_UPDATE_UI') {
+    applyUiSettings(event.data.settings);
+  } else if (event.data.type === 'WT_RELOAD_DATA') {
+    loadFromStorage();
+    renderAllViews();
+  } else if (event.data.type === 'WT_SWITCH_TAB') {
+    switchTab(event.data.tab);
+  }
+});
+
+// 监听跨标签页 localStorage 变动
+window.addEventListener('storage', (e) => {
+  if (e.key === 'wt_dishes' || e.key === 'wt_categories' || e.key === 'wt_meal_plans') {
+    loadFromStorage();
+    renderAllViews();
+  } else if (e.key === 'wt_ui_settings') {
+    loadUiSettings();
+  }
+});
+
 // --- 初始化与本地存储 ---
 function initApp() {
+  loadUiSettings();
   loadFromStorage();
   initCalendarDates();
   renderWeekSelector();
   renderCurrentDayMeals();
   renderCategoryFilterBar();
   renderDishesGrid();
-  renderAdminCategories();
-  renderAdminTable();
-  updateStats();
+
+  if (document.getElementById('stat-total-dishes')) {
+    renderAdminCategories();
+    renderAdminTable();
+    updateStats();
+  }
 
   // 初始化 Lucide 图标
   if (window.lucide) {
@@ -246,9 +309,13 @@ function renderAllViews() {
   renderCurrentDayMeals();
   renderCategoryFilterBar();
   renderDishesGrid();
-  renderAdminCategories();
-  renderAdminTable();
-  updateStats();
+
+  if (document.getElementById('stat-total-dishes')) {
+    renderAdminCategories();
+    renderAdminTable();
+    updateStats();
+  }
+
   if (window.lucide) {
     lucide.createIcons();
   }
@@ -731,20 +798,20 @@ function renderDishesGrid(list = null) {
   container.innerHTML = displayList.map(dish => {
     return `
       <div class="dish-card bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-soft flex flex-col justify-between group">
-        <div>
-          <div class="relative w-full aspect-[4/3] bg-stone-100 overflow-hidden">
+        <div class="card-main-content flex flex-col">
+          <div class="card-thumb-wrap relative w-full aspect-[4/3] bg-stone-100 overflow-hidden">
             <img src="${dish.image}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             <span class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 text-white backdrop-blur-md">${dish.category}</span>
           </div>
-          <div class="p-3">
+          <div class="card-info-wrap p-3">
             <h3 class="font-black text-stone-900 text-sm truncate mb-1">${dish.name}</h3>
-            <div class="flex flex-wrap gap-1 mb-2">
-              ${(dish.tags || []).slice(0, 2).map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">${tag}</span>`).join('')}
+            <div class="flex flex-wrap gap-1 mb-1.5">
+              ${(dish.tags || []).slice(0, 3).map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">${tag}</span>`).join('')}
             </div>
             ${dish.notes ? `<p class="text-[10px] text-stone-400 line-clamp-1 italic">“${dish.notes}”</p>` : ''}
           </div>
         </div>
-        <div class="p-2.5 pt-0 border-t border-stone-50 flex gap-1.5">
+        <div class="card-action-btn p-2.5 pt-0 border-t border-stone-50 flex gap-1.5">
           <button onclick="quickAddToToday('${dish.id}', 'lunch')" class="flex-1 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-[11px] font-bold text-center transition-colors">
             + 午餐
           </button>

@@ -14,14 +14,14 @@
         extend: {
           colors: {
             brand: {
-              50: '#fff7ed',
-              100: '#ffedd5',
-              200: '#fed7aa',
-              300: '#fdba74',
-              400: '#fb923c',
-              500: '#f97316',
-              600: '#ea580c',
-              700: '#c2410c',
+              50: 'var(--brand-50, #fff7ed)',
+              100: 'var(--brand-100, #ffedd5)',
+              200: 'var(--brand-200, #fed7aa)',
+              300: 'var(--brand-300, #fdba74)',
+              400: 'var(--brand-400, #fb923c)',
+              500: 'var(--brand-500, #f97316)',
+              600: 'var(--brand-600, #ea580c)',
+              700: 'var(--brand-700, #c2410c)',
             },
             cream: '#FAF7F2'
           },
@@ -34,175 +34,189 @@
     }
   </script>
   <link rel="stylesheet" href="style.css">
+  <script>
+    // 在页面渲染前立即应用保存的 UI 设定，避免界面闪烁
+    try {
+      const savedUi = JSON.parse(localStorage.getItem('wt_ui_settings') || '{}');
+      const bClasses = [];
+      bClasses.push(savedUi.density === 'compact' ? 'density-compact' : 'density-comfortable');
+      if (savedUi.dishLayout === 'single-col') bClasses.push('layout-single-col');
+      if (savedUi.theme) bClasses.push(`theme-${savedUi.theme}`);
+      if (savedUi.radius) bClasses.push(`radius-${savedUi.radius}`);
+      if (savedUi.fontSize === 'large') bClasses.push('font-large');
+      document.documentElement.className = bClasses.join(' ');
+    } catch(e) {}
+  </script>
 </head>
 <body class="bg-cream text-stone-800 min-h-screen pb-24 md:pb-12 font-sans antialiased selection:bg-brand-100">
 
-  <!-- 顶部导航与品牌栏 -->
+  <!-- 顶部轻量化导航 -->
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200/70 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="max-w-4xl mx-auto px-4 py-2.5 sm:py-3 flex items-center justify-between">
       <div class="flex items-center space-x-2.5">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
-          <i data-lucide="utensils" class="w-5 h-5"></i>
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20 flex-shrink-0">
+          <i data-lucide="utensils" class="w-4 h-4 sm:w-5 sm:h-5"></i>
         </div>
         <div>
-          <h1 class="text-xl font-black tracking-tight text-stone-900 flex items-center gap-1.5">
+          <h1 class="text-lg sm:text-xl font-black tracking-tight text-stone-900 flex items-center gap-1.5 leading-none">
             吃什么
-            <span class="text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 font-semibold border border-rose-100 flex items-center gap-1">
-              <i data-lucide="heart" class="w-3 h-3 fill-rose-500"></i> 家常菜谱
+            <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 font-semibold border border-rose-100 flex items-center gap-1">
+              <i data-lucide="heart" class="w-2.5 h-2.5 fill-rose-500"></i> 家常菜谱
             </span>
           </h1>
-          <p class="text-xs text-stone-400 font-medium">小两口专属点菜 · 今天想吃哪一道？</p>
+          <p class="text-[11px] sm:text-xs text-stone-400 font-medium mt-0.5">小两口专属点菜 · 今天想吃哪一道？</p>
         </div>
       </div>
 
-      <!-- 快捷导航与操作 -->
-      <div class="flex items-center gap-3">
-        <!-- 快速切换菜单按钮（电脑端） -->
-        <nav class="hidden md:flex items-center p-1 bg-stone-100 rounded-xl space-x-1 text-sm font-semibold">
-          <button onclick="switchTab('plan')" class="tab-btn px-4 py-1.5 rounded-lg transition-all" data-tab="plan">
-            <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4"></i>周排餐</span>
-          </button>
-          <button onclick="switchTab('dishes')" class="tab-btn px-4 py-1.5 rounded-lg transition-all" data-tab="dishes">
-            <span class="flex items-center gap-1.5"><i data-lucide="book-open" class="w-4 h-4"></i>菜品大厅</span>
-          </button>
-          <button onclick="switchTab('add')" class="tab-btn px-4 py-1.5 rounded-lg transition-all" data-tab="add">
-            <span class="flex items-center gap-1.5"><i data-lucide="camera" class="w-4 h-4"></i>拍照录入</span>
-          </button>
-          <button onclick="switchTab('admin')" class="tab-btn px-4 py-1.5 rounded-lg transition-all" data-tab="admin">
-            <span class="flex items-center gap-1.5"><i data-lucide="settings-2" class="w-4 h-4"></i>管理后台</span>
-          </button>
-        </nav>
-      </div>
-
-      <!-- 手机端右上角快捷区 -->
-      <div class="flex items-center gap-2 md:hidden">
-        <button onclick="switchTab('add')" class="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center border border-brand-100">
-          <i data-lucide="camera" class="w-4 h-4"></i>
+      <!-- 快捷导航按钮（电脑端） -->
+      <nav class="hidden md:flex items-center p-1 bg-stone-100 rounded-xl space-x-1 text-sm font-semibold">
+        <button onclick="switchTab('plan')" class="tab-btn px-4 py-1.5 rounded-lg transition-all" data-tab="plan">
+          <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4"></i>周排餐</span>
         </button>
-        <button onclick="switchTab('admin')" class="w-9 h-9 rounded-xl bg-stone-100 text-stone-600 flex items-center justify-center">
-          <i data-lucide="settings-2" class="w-4 h-4"></i>
+        <button onclick="switchTab('dishes')" class="tab-btn px-4 py-1.5 rounded-lg transition-all" data-tab="dishes">
+          <span class="flex items-center gap-1.5"><i data-lucide="book-open" class="w-4 h-4"></i>菜品大厅</span>
+        </button>
+        <button onclick="switchTab('add')" class="tab-btn px-4 py-1.5 rounded-lg transition-all" data-tab="add">
+          <span class="flex items-center gap-1.5"><i data-lucide="camera" class="w-4 h-4"></i>拍照/录入</span>
+        </button>
+        <a href="admin.html" target="_blank" class="px-3.5 py-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-200/60 transition-all flex items-center gap-1.5 text-xs font-bold" title="打开大厨专属后台管理网站">
+          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>后台管理 ↗
+        </a>
+      </nav>
+
+      <!-- 手机端右上角快捷区：轻巧干净 -->
+      <div class="flex items-center gap-1.5 md:hidden">
+        <button onclick="surpriseMealPlan()" class="px-2.5 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/80 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>盲盒</span>
+        </button>
+        <button onclick="shareMealPlanToChef()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-brand-500 text-white text-xs font-bold shadow-sm shadow-rose-500/20 flex items-center gap-1 active:scale-95 transition-all">
+          <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          <span>发大厨</span>
         </button>
       </div>
     </div>
   </header>
 
   <!-- 主体内容容器 -->
-  <main class="max-w-4xl mx-auto px-4 py-5">
+  <main class="max-w-4xl mx-auto px-3.5 sm:px-4">
 
     <!-- 1. 周排餐面板 (Plan Tab) -->
-    <section id="tab-plan" class="tab-content space-y-6">
-      <!-- 顶部控制条：周切换与选择困难救星 -->
-      <div class="bg-gradient-to-br from-amber-500/10 via-brand-500/5 to-rose-500/10 border border-brand-200/60 rounded-3xl p-4 md:p-5 shadow-soft">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2">
-              <span id="current-week-label" class="text-sm font-bold text-brand-700 bg-brand-100/80 px-2.5 py-0.5 rounded-full">本周菜单</span>
-              <span id="today-date-text" class="text-xs text-stone-500 font-medium"></span>
-            </div>
-            <h2 class="text-lg font-black text-stone-800 mt-1">女友点餐台 · 想吃啥点啥</h2>
+    <section id="tab-plan" class="tab-content">
+      <!-- 顶部控制条：周切换与快捷操作 -->
+      <div class="bg-gradient-to-br from-amber-500/10 via-brand-500/5 to-rose-500/10 border border-brand-200/60 rounded-3xl p-3.5 sm:p-5 shadow-soft">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <!-- 标题与状态 -->
+          <div class="flex items-center justify-between sm:justify-start gap-2">
+            <span id="current-week-label" class="text-xs sm:text-sm font-bold text-brand-700 bg-brand-100/90 px-3 py-1 rounded-full">本周菜单</span>
+            <span id="today-date-text" class="text-xs text-stone-500 font-medium"></span>
           </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <button onclick="shareMealPlanToChef()" class="px-3.5 py-1.5 bg-gradient-to-r from-rose-500 to-brand-500 text-white rounded-xl text-xs font-bold shadow-sm shadow-rose-500/20 hover:opacity-95 flex items-center gap-1.5 transition-all active:scale-95" title="点击复制选好的菜单发给微信大厨">
+
+          <!-- 操作按钮条 -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button onclick="shareMealPlanToChef()" class="hidden sm:inline-flex px-3.5 py-1.5 bg-gradient-to-r from-rose-500 to-brand-500 text-white rounded-xl text-xs font-bold shadow-sm shadow-rose-500/20 hover:opacity-95 items-center gap-1.5 active:scale-95 transition-all" title="点击复制选好的菜单发给微信大厨">
               <i data-lucide="send" class="w-3.5 h-3.5"></i> 📋 发给大厨
             </button>
-            <button onclick="openImportModal()" class="px-3.5 py-1.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all active:scale-95" title="粘贴女友发来的微信点菜，一键自动排入日程">
+            <button onclick="openImportModal()" class="px-2.5 sm:px-3.5 py-1.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1 active:scale-95 transition-all" title="粘贴女友发来的微信点菜，一键自动排入日程">
               <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i> 📥 导入点菜
             </button>
-            <button onclick="changeWeek(-1)" class="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-50 shadow-sm flex items-center gap-1">
-              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> 上周
-            </button>
-            <button onclick="resetToCurrentWeek()" class="px-3 py-1.5 bg-brand-500 text-white rounded-xl text-xs font-bold hover:bg-brand-600 shadow-sm shadow-brand-500/20">
-              返回今天
-            </button>
-            <button onclick="changeWeek(1)" class="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-50 shadow-sm flex items-center gap-1">
-              下周 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </button>
+            <div class="flex items-center bg-white rounded-xl border border-stone-200/80 p-0.5 shadow-sm text-xs font-bold">
+              <button onclick="changeWeek(-1)" class="p-1.5 text-stone-600 hover:bg-stone-50 rounded-lg" title="上周">
+                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="resetToCurrentWeek()" class="px-2 py-1 text-brand-600 hover:bg-brand-50 rounded-lg">
+                今天
+              </button>
+              <button onclick="changeWeek(1)" class="p-1.5 text-stone-600 hover:bg-stone-50 rounded-lg" title="下周">
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 星期横向滑动条 (周一至周日) -->
-        <div class="mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar" id="week-day-selector">
+        <div class="mt-3 sm:mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar" id="week-day-selector">
           <!-- 动态渲染 7 天胶囊按钮 -->
         </div>
       </div>
 
       <!-- 当天午餐与晚餐明细卡片 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="day-meal-container">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5" id="day-meal-container">
         <!-- 午餐区域 -->
-        <div class="bg-white rounded-3xl border border-stone-200/80 p-5 shadow-soft relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-24 h-24 bg-amber-100/50 rounded-bl-full -z-0 pointer-events-none"></div>
-          <div class="flex items-center justify-between mb-4 relative z-10">
+        <div class="bg-white rounded-3xl border border-stone-200/80 p-4 sm:p-5 shadow-soft relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-amber-100/40 rounded-bl-full -z-0 pointer-events-none"></div>
+          <div class="flex items-center justify-between mb-3.5 relative z-10">
             <div class="flex items-center gap-2">
               <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
                 <i data-lucide="sun" class="w-4 h-4"></i>
               </div>
               <div>
-                <h3 class="font-black text-stone-900">☀️ 午餐安排</h3>
-                <p class="text-xs text-stone-400">元气满满的中午时光</p>
+                <h3 class="font-black text-stone-900 text-sm sm:text-base">☀️ 午餐安排</h3>
+                <p class="text-[11px] text-stone-400">元气满满的中午时光</p>
               </div>
             </div>
-            <button onclick="openDishPicker('lunch')" class="px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/80 rounded-xl text-xs font-bold flex items-center gap-1 transition-all">
+            <button onclick="openDishPicker('lunch')" class="px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/80 rounded-xl text-xs font-bold flex items-center gap-1 active:scale-95 transition-all">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> 点菜
             </button>
           </div>
           <!-- 午餐菜品列表容器 -->
-          <div id="lunch-dish-list" class="space-y-2.5 min-h-[120px]">
+          <div id="lunch-dish-list" class="space-y-2 min-h-[100px]">
             <!-- 动态渲染 -->
           </div>
         </div>
 
         <!-- 晚餐区域 -->
-        <div class="bg-white rounded-3xl border border-stone-200/80 p-5 shadow-soft relative overflow-hidden">
+        <div class="bg-white rounded-3xl border border-stone-200/80 p-4 sm:p-5 shadow-soft relative overflow-hidden">
           <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-100/40 rounded-bl-full -z-0 pointer-events-none"></div>
-          <div class="flex items-center justify-between mb-4 relative z-10">
+          <div class="flex items-center justify-between mb-3.5 relative z-10">
             <div class="flex items-center gap-2">
               <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
                 <i data-lucide="moon" class="w-4 h-4"></i>
               </div>
               <div>
-                <h3 class="font-black text-stone-900">🌙 晚餐安排</h3>
-                <p class="text-xs text-stone-400">下班后的温馨慰藉</p>
+                <h3 class="font-black text-stone-900 text-sm sm:text-base">🌙 晚餐安排</h3>
+                <p class="text-[11px] text-stone-400">下班后的温馨犒赏</p>
               </div>
             </div>
-            <button onclick="openDishPicker('dinner')" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-xl text-xs font-bold flex items-center gap-1 transition-all">
+            <button onclick="openDishPicker('dinner')" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/80 rounded-xl text-xs font-bold flex items-center gap-1 active:scale-95 transition-all">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> 点菜
             </button>
           </div>
           <!-- 晚餐菜品列表容器 -->
-          <div id="dinner-dish-list" class="space-y-2.5 min-h-[120px]">
+          <div id="dinner-dish-list" class="space-y-2 min-h-[100px]">
             <!-- 动态渲染 -->
           </div>
         </div>
       </div>
 
       <!-- 选择困难救星：一键盲盒搭配 -->
-      <div class="bg-white rounded-2xl border border-stone-200/80 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+      <div class="bg-white rounded-2xl border border-stone-200/80 p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
             <i data-lucide="dices" class="w-5 h-5"></i>
           </div>
           <div>
-            <h4 class="text-sm font-black text-stone-900">女友又不知道吃什么？</h4>
-            <p class="text-xs text-stone-500">点击按钮，大厨算法为你们随机搭配“一荤一素一汤”</p>
+            <h4 class="text-xs sm:text-sm font-black text-stone-900">想不出吃啥？一键盲盒搭配</h4>
+            <p class="text-[11px] text-stone-400">自动随机构建荤素均衡的美味组合</p>
           </div>
         </div>
-        <button onclick="surpriseMealPlan()" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-rose-500 to-amber-500 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20 hover:opacity-95 flex items-center justify-center gap-1.5 transition-all">
-          <i data-lucide="sparkles" class="w-4 h-4"></i> 帮我想！一键随机排餐
+        <button onclick="surpriseMealPlan()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-rose-500 to-amber-500 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20 hover:opacity-95 flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+          <i data-lucide="sparkles" class="w-4 h-4"></i> 帮我想！一键摇号排餐
         </button>
       </div>
     </section>
 
     <!-- 2. 菜品大厅面板 (Dishes Tab) -->
-    <section id="tab-dishes" class="tab-content hidden space-y-5">
+    <section id="tab-dishes" class="tab-content hidden space-y-4">
       <!-- 搜索与筛选控制台 -->
-      <div class="bg-white rounded-3xl border border-stone-200/80 p-4 shadow-soft space-y-3">
+      <div class="bg-white rounded-3xl border border-stone-200/80 p-3.5 sm:p-4 shadow-soft space-y-3">
         <div class="flex items-center gap-2">
           <div class="relative flex-1">
             <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-            <input type="text" id="search-dish-input" oninput="filterDishes()" placeholder="搜索菜名、食材或标签（如：鸡翅、排骨）..." class="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+            <input type="text" id="search-dish-input" oninput="filterDishes()" placeholder="搜索菜名、食材或标签（如：青椒、鸡翅）..." class="w-full pl-9 pr-3 py-2 bg-stone-50 border border-stone-200 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
           </div>
-          <button onclick="switchTab('add')" class="px-3.5 py-2.5 bg-brand-500 text-white rounded-2xl text-xs font-bold shadow-sm shadow-brand-500/20 hover:bg-brand-600 flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-all">
-            <i data-lucide="plus" class="w-4 h-4"></i> 录入新菜
+          <button onclick="switchTab('add')" class="px-3.5 py-2 bg-brand-500 text-white rounded-2xl text-xs font-bold shadow-sm shadow-brand-500/20 hover:bg-brand-600 flex items-center gap-1 whitespace-nowrap active:scale-95 transition-all">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 录入新菜
           </button>
         </div>
         <!-- 分类筛选胶囊 -->
@@ -212,20 +226,20 @@
       </div>
 
       <!-- 菜谱网格展示区 -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 sm:gap-4" id="dishes-grid">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4" id="dishes-grid">
         <!-- 动态渲染菜品卡片 -->
       </div>
     </section>
 
     <!-- 3. 拍照/选图录入面板 (Add Tab) -->
     <section id="tab-add" class="tab-content hidden">
-      <div class="bg-white rounded-3xl border border-stone-200/80 p-5 md:p-8 shadow-soft max-w-xl mx-auto space-y-6">
+      <div class="bg-white rounded-3xl border border-stone-200/80 p-5 md:p-8 shadow-soft max-w-xl mx-auto space-y-5">
         <div>
-          <h2 class="text-xl font-black text-stone-900 flex items-center gap-2">
-            <i data-lucide="camera" class="w-6 h-6 text-brand-500"></i>
+          <h2 class="text-lg sm:text-xl font-black text-stone-900 flex items-center gap-2">
+            <i data-lucide="camera" class="w-5 h-5 sm:w-6 sm:h-6 text-brand-500"></i>
             记录一道新菜
           </h2>
-          <p class="text-xs text-stone-500 mt-1">支持手机拍照录入或直接从本地相册上传图片</p>
+          <p class="text-xs text-stone-400 mt-0.5">支持手机拍照录入或直接从本地相册上传图片</p>
         </div>
 
         <!-- 拍照 / 本地相册选图上传区 -->
@@ -238,180 +252,62 @@
             <input type="file" id="local-file-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
             
             <img id="photo-preview-img" class="w-full h-full object-cover hidden" alt="菜品预览">
-            
-            <div id="upload-placeholder" class="flex flex-col items-center text-center p-5 space-y-3">
-              <div class="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-1">
-                <i data-lucide="image" class="w-7 h-7"></i>
+
+            <div id="upload-placeholder" class="text-center p-4">
+              <div class="w-12 h-12 rounded-full bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-2.5">
+                <i data-lucide="image-plus" class="w-6 h-6"></i>
               </div>
-              <div>
-                <p class="text-sm font-black text-stone-800">上传菜品实拍图</p>
-                <p class="text-xs text-stone-400 mt-0.5">请选择拍照或直接从本地相册/电脑上传：</p>
-              </div>
-              <div class="flex items-center gap-2.5 pt-1">
-                <button type="button" onclick="triggerCameraInput()" class="px-4 py-2 bg-gradient-to-r from-brand-500 to-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-brand-500/20 hover:opacity-90 active:scale-95 transition-all">
-                  <i data-lucide="camera" class="w-4 h-4"></i> 手机拍照
+              <p class="text-xs font-bold text-stone-700 mb-1">为这道菜上传一张诱人照片</p>
+              <p class="text-[11px] text-stone-400 mb-3">支持现场拍照或从手机相册、电脑选图</p>
+              
+              <div class="flex items-center justify-center gap-2">
+                <button type="button" onclick="triggerCameraInput()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+                  <i data-lucide="camera" class="w-3.5 h-3.5"></i> 手机拍照
                 </button>
-                <button type="button" onclick="triggerLocalFileInput()" class="px-4 py-2 bg-stone-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-stone-700 active:scale-95 transition-all shadow-sm">
-                  <i data-lucide="upload" class="w-4 h-4"></i> 本地相册/选图
+                <button type="button" onclick="triggerLocalFileInput()" class="px-3.5 py-1.5 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+                  <i data-lucide="folder-image" class="w-3.5 h-3.5"></i> 本地相册/选图
                 </button>
               </div>
             </div>
 
-            <!-- 已上传后的更换按钮组 -->
-            <div id="re-upload-group" class="hidden absolute bottom-3 right-3 flex items-center gap-2">
-              <button type="button" onclick="triggerCameraInput()" class="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-xl text-xs font-bold flex items-center gap-1">
-                <i data-lucide="camera" class="w-3.5 h-3.5"></i> 重拍
-              </button>
-              <button type="button" onclick="triggerLocalFileInput()" class="px-3 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-xl text-xs font-bold flex items-center gap-1">
-                <i data-lucide="upload" class="w-3.5 h-3.5"></i> 换本地图
-              </button>
+            <!-- 照片已选后的重置悬浮条 -->
+            <div id="reupload-overlay" class="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-md p-2 rounded-xl hidden items-center justify-between text-white text-xs">
+              <span class="truncate text-[11px] opacity-90 pl-1">照片已就绪</span>
+              <div class="flex gap-1.5">
+                <button type="button" onclick="triggerCameraInput()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-[11px]">重拍</button>
+                <button type="button" onclick="triggerLocalFileInput()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-[11px]">相册更换</button>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 菜品信息表单 -->
-        <div class="space-y-4">
+        <div class="space-y-3.5">
           <div>
-            <label class="block text-xs font-bold text-stone-700 mb-1.5">菜品名称 *</label>
-            <input type="text" id="new-dish-name" placeholder="例如：秘制红烧肉、蒜蓉西兰花" class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-medium">
+            <label class="block text-xs font-bold text-stone-700 mb-1">菜品名称 *</label>
+            <input type="text" id="new-dish-name" placeholder="例如：秘制可乐鸡翅" class="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-stone-700 mb-1.5">菜品分类 *</label>
-            <div class="flex gap-2">
-              <select id="new-dish-category" class="flex-1 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 font-medium">
-                <!-- 动态填充分类选项 -->
-              </select>
-            </div>
+            <label class="block text-xs font-bold text-stone-700 mb-1">所属分类 *</label>
+            <select id="new-dish-category" class="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+              <!-- 动态填充分类选项 -->
+            </select>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-stone-700 mb-1.5">口味 / 特点标签（用逗号或空格隔开）</label>
-            <input type="text" id="new-dish-tags" placeholder="例如：拿手好戏, 微辣, 下饭神器, 减脂" class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
-            <div class="flex flex-wrap gap-1.5 mt-2" id="quick-tags-container">
-              <!-- 快捷标签推荐点击 -->
-              <button type="button" onclick="appendTag('下饭神器')" class="text-[11px] px-2.5 py-1 bg-stone-100 hover:bg-brand-50 text-stone-600 rounded-lg">+ 下饭神器</button>
-              <button type="button" onclick="appendTag('微辣爽口')" class="text-[11px] px-2.5 py-1 bg-stone-100 hover:bg-brand-50 text-stone-600 rounded-lg">+ 微辣爽口</button>
-              <button type="button" onclick="appendTag('清淡鲜甜')" class="text-[11px] px-2.5 py-1 bg-stone-100 hover:bg-brand-50 text-stone-600 rounded-lg">+ 清淡鲜甜</button>
-              <button type="button" onclick="appendTag('快手简单')" class="text-[11px] px-2.5 py-1 bg-stone-100 hover:bg-brand-50 text-stone-600 rounded-lg">+ 快手简单</button>
-              <button type="button" onclick="appendTag('大厨拿手')" class="text-[11px] px-2.5 py-1 bg-stone-100 hover:bg-brand-50 text-stone-600 rounded-lg">+ 大厨拿手</button>
-            </div>
+            <label class="block text-xs font-bold text-stone-700 mb-1">口味与标签（用空格或逗号分隔）</label>
+            <input type="text" id="new-dish-tags" placeholder="例如：甜口微辣 下饭神器 快手菜" class="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-stone-700 mb-1.5">大厨小贴士 / 女友偏好备忘（可选）</label>
-            <textarea id="new-dish-notes" rows="2" placeholder="例如：女朋友爱吃甜一点，少放生姜和大葱..." class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"></textarea>
+            <label class="block text-xs font-bold text-stone-700 mb-1">大厨小贴士 / 女友偏好备忘（可选）</label>
+            <textarea id="new-dish-notes" rows="2" placeholder="例如：女朋友爱吃甜一点，少放生姜和大葱..." class="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"></textarea>
           </div>
 
-          <button onclick="saveNewDish()" class="w-full py-3 bg-gradient-to-r from-brand-500 to-amber-500 text-white font-bold rounded-2xl shadow-md shadow-brand-500/20 hover:opacity-95 transition-all flex items-center justify-center gap-2">
-            <i data-lucide="check" class="w-5 h-5"></i> 保存这道菜到菜谱库
+          <button onclick="saveNewDish()" class="w-full py-3 bg-gradient-to-r from-brand-500 to-amber-500 text-white font-bold rounded-2xl shadow-md shadow-brand-500/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 active:scale-98">
+            <i data-lucide="check" class="w-4 h-4"></i> 保存这道菜到菜谱库
           </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. 管理后台面板 (Admin Tab) -->
-    <section id="tab-admin" class="tab-content hidden space-y-6">
-      <div class="bg-white rounded-3xl border border-stone-200/80 p-5 md:p-6 shadow-soft">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-          <div>
-            <h2 class="text-lg font-black text-stone-900 flex items-center gap-2">
-              <i data-lucide="settings-2" class="w-5 h-5 text-brand-500"></i>
-              菜谱数据与分类管理
-            </h2>
-            <p class="text-xs text-stone-400 mt-0.5">随时增删改查菜品、更换图片、编辑分类、备份导出</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="exportDataBackup()" class="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold flex items-center gap-1.5">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i> 备份导出
-            </button>
-            <label class="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="upload" class="w-3.5 h-3.5"></i> 恢复数据
-              <input type="file" accept=".json" class="hidden" onchange="importDataBackup(event)">
-            </label>
-            <button onclick="resetDefaultDishesConfirm()" class="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold flex items-center gap-1.5">
-              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 重置样例
-            </button>
-          </div>
-        </div>
-
-        <!-- 统计面板 -->
-        <div class="grid grid-cols-3 gap-3 my-4">
-          <div class="p-3.5 bg-brand-50/60 rounded-2xl border border-brand-100 text-center">
-            <p class="text-xs text-brand-600 font-semibold">现有菜品总数</p>
-            <p id="stat-total-dishes" class="text-2xl font-black text-brand-700 mt-0.5">0</p>
-          </div>
-          <div class="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-100 text-center">
-            <p class="text-xs text-amber-600 font-semibold">菜品分类数</p>
-            <p id="stat-total-categories" class="text-2xl font-black text-amber-700 mt-0.5">0</p>
-          </div>
-          <div class="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-center">
-            <p class="text-xs text-emerald-600 font-semibold">本周已排餐数</p>
-            <p id="stat-week-planned" class="text-2xl font-black text-emerald-700 mt-0.5">0</p>
-          </div>
-        </div>
-
-        <!-- 💡 微信点菜与双人共享指南（完全免费、零配置） -->
-        <div class="p-4 md:p-5 bg-gradient-to-br from-rose-50/70 via-white to-brand-50/40 rounded-2xl border border-rose-100 shadow-sm mb-5">
-          <div class="flex items-center gap-2.5 mb-2.5">
-            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-brand-500 text-white flex items-center justify-center font-bold shadow-sm">
-              <i data-lucide="heart" class="w-4 h-4 fill-white"></i>
-            </div>
-            <div>
-              <h3 class="font-black text-stone-900 text-sm">💡 小两口异地如何无缝点菜？（100% 永久免费）</h3>
-              <p class="text-xs text-stone-500">不用花一分钱，也不用注册任何数据库，微信直接互通！</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-stone-600 mt-3">
-            <div class="p-3 bg-white/80 rounded-xl border border-stone-200/70">
-              <p class="font-bold text-stone-800 mb-1 flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded-full bg-rose-100 text-rose-600 text-[10px] flex items-center justify-center font-bold">1</span>
-                女朋友在公司选菜并发送：
-              </p>
-              <p class="text-stone-500 leading-relaxed">
-                手机打开网页挑好菜后，点击右上角<b>「📋 发给大厨」</b>，点菜清单会自动复制到剪贴板，微信一键发送给大厨！
-              </p>
-            </div>
-            <div class="p-3 bg-white/80 rounded-xl border border-stone-200/70">
-              <p class="font-bold text-stone-800 mb-1 flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded-full bg-brand-100 text-brand-600 text-[10px] flex items-center justify-center font-bold">2</span>
-                大厨在微信接单并一键导入：
-              </p>
-              <p class="text-stone-500 leading-relaxed">
-                你在微信收到后，打开网页点击<b>「📥 导入点菜」</b>粘贴内容，当天的午餐和晚餐就会瞬间自动排好！
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 分类管理条 -->
-        <div class="p-4 bg-stone-50 rounded-2xl border border-stone-200/60 mb-5">
-          <h3 class="text-xs font-bold text-stone-700 mb-2">自定义分类管理：</h3>
-          <div class="flex flex-wrap gap-2 items-center" id="admin-categories-tags">
-            <!-- 动态分类标签 -->
-          </div>
-          <div class="mt-2.5 flex gap-2">
-            <input type="text" id="new-category-input" placeholder="输入新分类名称..." class="px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs flex-1 max-w-xs focus:outline-none focus:border-brand-500">
-            <button onclick="addCustomCategory()" class="px-3 py-1.5 bg-stone-800 text-white rounded-xl text-xs font-bold hover:bg-stone-700">添加分类</button>
-          </div>
-        </div>
-
-        <!-- 菜品列表管理表格 -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="text-xs text-stone-400 bg-stone-50/80 border-y border-stone-100">
-              <tr>
-                <th class="py-2.5 px-3">照片</th>
-                <th class="py-2.5 px-3">菜名</th>
-                <th class="py-2.5 px-3">分类</th>
-                <th class="py-2.5 px-3">标签/口味</th>
-                <th class="py-2.5 px-3 text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody id="admin-dishes-tbody" class="divide-y divide-stone-100">
-              <!-- 动态填充菜品管理行 -->
-            </tbody>
-          </table>
         </div>
       </div>
     </section>
@@ -422,15 +318,15 @@
   <div id="dish-picker-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full sm:max-w-xl max-h-[85vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
       <!-- 弹窗头部 -->
-      <div class="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/60">
+      <div class="p-3.5 sm:p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/60">
         <div>
-          <h3 class="font-black text-stone-900 flex items-center gap-1.5">
+          <h3 class="font-black text-stone-900 text-sm sm:text-base flex items-center gap-1.5">
             <span id="picker-target-title" class="text-brand-600">周一 午餐</span>
             <span>· 挑两道想吃的</span>
           </h3>
-          <p class="text-xs text-stone-400">点击菜品卡片即可直接加入菜单</p>
+          <p class="text-[11px] text-stone-400">点击菜品卡片即可直接加入菜单</p>
         </div>
-        <button onclick="closeDishPicker()" class="w-8 h-8 rounded-full bg-stone-200/80 hover:bg-stone-300 flex items-center justify-center text-stone-600">
+        <button onclick="closeDishPicker()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stone-200/80 hover:bg-stone-300 flex items-center justify-center text-stone-600">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -444,72 +340,15 @@
       </div>
 
       <!-- 菜品列表滚动区 -->
-      <div class="p-4 overflow-y-auto flex-1 grid grid-cols-2 gap-3" id="picker-dishes-container">
+      <div class="p-3.5 sm:p-4 overflow-y-auto flex-1 grid grid-cols-2 gap-2.5 sm:gap-3" id="picker-dishes-container">
         <!-- 动态渲染可选菜品 -->
       </div>
     </div>
   </div>
 
-  <!-- 弹窗：编辑菜品 (Edit Dish Modal) -->
-  <div id="edit-dish-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-stone-100 pb-3">
-        <h3 class="font-black text-stone-900">修改菜品信息</h3>
-        <button onclick="closeEditDishModal()" class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-500">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-      <input type="hidden" id="edit-dish-id">
-      <div>
-        <label class="block text-xs font-bold text-stone-700 mb-1">菜品名称</label>
-        <input type="text" id="edit-dish-name" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium">
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-stone-700 mb-1">所属分类</label>
-        <select id="edit-dish-category" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium">
-          <!-- 动态填充 -->
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-stone-700 mb-1">口味标签</label>
-        <input type="text" id="edit-dish-tags" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm">
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-stone-700 mb-1">更换照片</label>
-        <input type="file" id="edit-photo-input" accept="image/*" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-600 hover:file:bg-brand-100" onchange="handleEditPhotoUpload(event)">
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeEditDishModal()" class="px-4 py-2 bg-stone-100 text-stone-600 rounded-xl text-xs font-bold">取消</button>
-        <button onclick="submitEditDish()" class="px-4 py-2 bg-brand-500 text-white rounded-xl text-xs font-bold">保存修改</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 手机端底部固定导航栏 -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 px-4 py-2 flex items-center justify-around shadow-lg">
-    <button onclick="switchTab('plan')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[10px] transition-colors" data-tab="plan">
-      <i data-lucide="calendar" class="w-5 h-5 mb-0.5"></i>
-      <span>周排餐</span>
-    </button>
-    <button onclick="switchTab('dishes')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[10px] transition-colors" data-tab="dishes">
-      <i data-lucide="book-open" class="w-5 h-5 mb-0.5"></i>
-      <span>菜谱库</span>
-    </button>
-    <button onclick="switchTab('add')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[10px] transition-colors" data-tab="add">
-      <div class="w-10 h-10 -mt-5 bg-gradient-to-tr from-brand-500 to-amber-400 rounded-full flex items-center justify-center text-white shadow-md shadow-brand-500/30">
-        <i data-lucide="plus" class="w-5 h-5"></i>
-      </div>
-      <span class="mt-0.5">拍新菜</span>
-    </button>
-    <button onclick="switchTab('admin')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[10px] transition-colors" data-tab="admin">
-      <i data-lucide="settings-2" class="w-5 h-5 mb-0.5"></i>
-      <span>管理后台</span>
-    </button>
-  </nav>
-
   <!-- 弹窗：导入微信点菜 (Import Dish Modal) -->
   <div id="import-dish-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 animate-slide-up">
+    <div class="bg-white w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl space-y-3.5 animate-slide-up">
       <div class="flex items-center justify-between border-b border-stone-100 pb-3">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center font-bold">
@@ -517,10 +356,10 @@
           </div>
           <div>
             <h3 class="font-black text-stone-900 text-sm">导入女友点菜清单</h3>
-            <p class="text-xs text-stone-400">粘贴女友微信发来的内容，一键排入日程</p>
+            <p class="text-[11px] text-stone-400">粘贴女友微信发来的内容，一键排入日程</p>
           </div>
         </div>
-        <button onclick="closeImportModal()" class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-500">
+        <button onclick="closeImportModal()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-500">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -535,12 +374,30 @@
           <i data-lucide="clipboard" class="w-3.5 h-3.5"></i> 从剪贴板粘贴
         </button>
         <div class="flex gap-2">
-          <button onclick="closeImportModal()" class="px-4 py-2 bg-stone-100 text-stone-600 rounded-xl text-xs font-bold">取消</button>
-          <button onclick="doImportMealPlan()" class="px-4 py-2 bg-gradient-to-r from-rose-500 to-brand-500 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20">一键导入排餐</button>
+          <button onclick="closeImportModal()" class="px-3.5 py-1.5 bg-stone-100 text-stone-600 rounded-xl text-xs font-bold">取消</button>
+          <button onclick="doImportMealPlan()" class="px-4 py-1.5 bg-gradient-to-r from-rose-500 to-brand-500 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20">一键导入</button>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- 手机端底部纯净 3 项导航栏（彻底告别拥挤） -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 px-6 py-2 flex items-center justify-around shadow-lg">
+    <button onclick="switchTab('plan')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[11px] transition-colors" data-tab="plan">
+      <i data-lucide="calendar" class="w-5 h-5 mb-0.5"></i>
+      <span>周排餐</span>
+    </button>
+    <button onclick="switchTab('dishes')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[11px] transition-colors" data-tab="dishes">
+      <i data-lucide="book-open" class="w-5 h-5 mb-0.5"></i>
+      <span>菜谱库</span>
+    </button>
+    <button onclick="switchTab('add')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[11px] transition-colors" data-tab="add">
+      <div class="w-9 h-9 -mt-4 bg-gradient-to-tr from-brand-500 to-amber-400 rounded-full flex items-center justify-center text-white shadow-md shadow-brand-500/30">
+        <i data-lucide="plus" class="w-5 h-5"></i>
+      </div>
+      <span class="mt-0.5">记新菜</span>
+    </button>
+  </nav>
 
   <!-- 轻量提示弹窗 Toast -->
   <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-stone-900/90 text-white text-xs font-bold shadow-xl flex items-center gap-2 pointer-events-none transition-all opacity-0 translate-y-[-10px]">

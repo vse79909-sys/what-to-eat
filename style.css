@@ -1,4 +1,143 @@
-/* 自定义样式补充 */
+/* 《吃什么》样式核心与动态 UI 引擎 */
+
+:root {
+  --brand-50: #fff7ed;
+  --brand-100: #ffedd5;
+  --brand-200: #fed7aa;
+  --brand-300: #fdba74;
+  --brand-400: #fb923c;
+  --brand-500: #f97316;
+  --brand-600: #ea580c;
+  --brand-700: #c2410c;
+  --card-radius: 1.5rem; /* 24px */
+  --content-spacing: 1.5rem;
+  --base-font-size: 16px;
+}
+
+/* --- 主题色切换支持 --- */
+body.theme-green {
+  --brand-50: #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+}
+
+body.theme-pink {
+  --brand-50: #fff1f2;
+  --brand-100: #ffe4e6;
+  --brand-200: #fecdd3;
+  --brand-300: #fda4af;
+  --brand-400: #fb7185;
+  --brand-500: #f43f5e;
+  --brand-600: #e11d48;
+  --brand-700: #be123c;
+}
+
+body.theme-stone {
+  --brand-50: #f8fafc;
+  --brand-100: #f1f5f9;
+  --brand-200: #e2e8f0;
+  --brand-300: #cbd5e1;
+  --brand-400: #94a3b8;
+  --brand-500: #64748b;
+  --brand-600: #475569;
+  --brand-700: #334155;
+}
+
+/* 字体放大模式 */
+body.font-large {
+  font-size: 17.5px;
+}
+body.font-large h1 { font-size: 1.45rem; }
+body.font-large h2 { font-size: 1.25rem; }
+body.font-large h3 { font-size: 1.1rem; }
+body.font-large .text-xs { font-size: 0.825rem; }
+body.font-large .text-sm { font-size: 0.95rem; }
+
+/* 圆角配置 */
+body.radius-medium {
+  --card-radius: 1rem; /* 16px */
+}
+body.radius-small {
+  --card-radius: 0.625rem; /* 10px */
+}
+
+/* --- 间距与排版密度 (告别拥挤的核心) --- */
+body.density-comfortable main {
+  padding-top: 1.25rem;
+  padding-bottom: 6rem;
+}
+body.density-comfortable .tab-content > * + * {
+  margin-top: 1.5rem !important;
+}
+body.density-comfortable .day-pill {
+  min-width: 76px;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+body.density-compact main {
+  padding-top: 0.75rem;
+  padding-bottom: 4.5rem;
+}
+body.density-compact .tab-content > * + * {
+  margin-top: 0.875rem !important;
+}
+body.density-compact .day-pill {
+  min-width: 64px;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+/* --- 菜品卡片单列大图模式 (移动端沉浸呼吸感) --- */
+body.layout-single-col #dishes-grid {
+  grid-template-columns: 1fr !important;
+}
+body.layout-single-col #dishes-grid .dish-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.75rem !important;
+}
+body.layout-single-col #dishes-grid .dish-card .card-main-content {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  gap: 0.75rem !important;
+}
+body.layout-single-col #dishes-grid .dish-card .card-thumb-wrap {
+  width: 85px !important;
+  height: 72px !important;
+  aspect-ratio: auto !important;
+  border-radius: 0.75rem !important;
+  flex-shrink: 0 !important;
+  margin-bottom: 0 !important;
+}
+body.layout-single-col #dishes-grid .dish-card .card-info-wrap {
+  padding: 0 !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+body.layout-single-col #dishes-grid .dish-card .card-action-btn {
+  border-top: none !important;
+  padding: 0 !important;
+  margin-top: 0 !important;
+  flex-direction: column !important;
+  gap: 0.35rem !important;
+  width: 64px !important;
+  flex-shrink: 0 !important;
+}
+
+/* 通用动效 */
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -26,25 +165,26 @@
 /* 标签激活状态高亮 */
 .tab-btn.active {
   background-color: #ffffff;
-  color: #ea580c;
+  color: var(--brand-600);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-tab-btn.active {
-  color: #ea580c;
+  color: var(--brand-500);
 }
 
 /* 星期选择胶囊激活 */
 .day-pill.active {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-400) 100%);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.28);
   border-color: transparent;
 }
 
 /* 菜品卡片轻微浮起动效 */
 .dish-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: var(--card-radius);
 }
 .dish-card:active {
   transform: scale(0.98);
