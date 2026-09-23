@@ -691,3 +691,81 @@ function showAdminToast(msg) {
     toast.classList.add('opacity-0', 'translate-y-[-10px]');
   }, 2200);
 }
+
+// --- 📲 手机同步逻辑 (微信扫一扫 / 复制链接同步) ---
+function openSyncModal() {
+  const syncData = generateSyncPayload();
+  const jsonStr = JSON.stringify(syncData);
+  const base64Str = utf8ToBase64(jsonStr);
+
+  const baseUrl = window.location.href.split('admin.html')[0] + 'index.html';
+  const syncUrl = `${baseUrl}?sync=${encodeURIComponent(base64Str)}`;
+
+  window._currentSyncUrl = syncUrl;
+
+  const qrImg = document.getElementById('sync-qr-image');
+  if (qrImg) {
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data=${encodeURIComponent(syncUrl)}`;
+  }
+
+  const modal = document.getElementById('sync-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function closeSyncModal() {
+  const modal = document.getElementById('sync-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+function copySyncLink() {
+  if (!window._currentSyncUrl) return;
+  navigator.clipboard.writeText(window._currentSyncUrl).then(() => {
+    showAdminToast('📋 微信同步链接已复制！发送到微信直接点击即可同步！');
+  }).catch(() => {
+    prompt('请复制下方链接发送到微信文件传输助手：', window._currentSyncUrl);
+  });
+}
+
+function generateSyncPayload() {
+  const diffs = [];
+  adminState.dishes.forEach(d => {
+    const orig = DEFAULT_DISHES.find(o => o.id === d.id);
+    if (!orig) {
+      diffs.push(d);
+    } else {
+      const diff = { id: d.id };
+      let hasChange = false;
+      if (d.name !== orig.name) { diff.name = d.name; hasChange = true; }
+      if (d.category !== orig.category) { diff.category = d.category; hasChange = true; }
+      if (d.notes !== orig.notes) { diff.notes = d.notes; hasChange = true; }
+      if (JSON.stringify(d.tags) !== JSON.stringify(orig.tags)) { diff.tags = d.tags; hasChange = true; }
+      if (d.image !== orig.image && !d.image.startsWith('data:')) { diff.image = d.image; hasChange = true; }
+      if (hasChange) diffs.push(diff);
+    }
+  });
+
+  const deletedIds = DEFAULT_DISHES
+    .filter(o => !adminState.dishes.some(d => d.id === o.id))
+    .map(o => o.id);
+
+  return {
+    diffs,
+    deletedIds,
+    categories: adminState.categories,
+    v: Date.now()
+  };
+}
+
+function utf8ToBase64(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+    return String.fromCharCode('0x' + p1);
+  }));
+}
+

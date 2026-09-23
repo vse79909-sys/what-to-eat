@@ -92,6 +92,9 @@
         <a href="index.html" target="_blank" class="px-3.5 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
           <i data-lucide="external-link" class="w-3.5 h-3.5"></i> 手机端独立访问 ↗
         </a>
+        <button onclick="openSyncModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-brand-500/20 active:scale-95 transition-all" title="微信扫一扫，把电脑修改同步到 iPhone 17">
+          <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> 📲 同步到手机 (微信扫一扫)
+        </button>
         <button onclick="exportDataBackup()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
           <i data-lucide="download" class="w-3.5 h-3.5"></i> 备份导出
         </button>
@@ -217,7 +220,7 @@
       <div class="w-full lg:w-5/12 xl:w-2/5 flex flex-col items-center sticky top-20">
         
         <!-- 预览视窗顶栏控制 -->
-        <div class="w-full max-w-[390px] mb-3 flex items-center justify-between text-xs text-slate-500">
+        <div class="w-full max-w-[393px] mb-3 flex items-center justify-between text-xs text-slate-500">
           <div class="flex items-center gap-1.5 font-bold">
             <i data-lucide="smartphone" class="w-4 h-4 text-brand-500"></i>
             <span>手机实时效果</span>
@@ -225,10 +228,10 @@
 
           <!-- 模拟机型切换与操作 -->
           <div class="flex items-center gap-1.5">
-            <select id="device-selector" onchange="changeDeviceSize(this.value)" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-semibold">
-              <option value="375,760">iPhone 15 Pro (375x760)</option>
-              <option value="390,820">iPhone 15 (390x820)</option>
-              <option value="412,840">Android (412x840)</option>
+            <select id="device-selector" onchange="changeDeviceSize(this.value)" class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700">
+              <option value="393,820" selected>iPhone 17</option>
+              <option value="375,760">iPhone 15</option>
+              <option value="412,840">Android</option>
             </select>
             <button onclick="reloadPreview()" class="p-1 hover:bg-slate-200 rounded-lg" title="重新载入预览">
               <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
@@ -237,7 +240,7 @@
         </div>
 
         <!-- 真实质感手机外壳框架 -->
-        <div id="phone-container" class="phone-mockup relative bg-black rounded-[46px] p-3 flex flex-col items-center overflow-hidden" style="width: 375px; height: 760px;">
+        <div id="phone-container" class="phone-mockup relative bg-black rounded-[46px] p-3 flex flex-col items-center overflow-hidden" style="width: 393px; height: 820px;">
           <!-- 听筒与灵动岛 -->
           <div class="absolute top-4 z-30 flex justify-center w-full pointer-events-none">
             <div class="dynamic-island flex items-center justify-between px-3">
@@ -264,6 +267,52 @@
 
     </div>
   </main>
+
+  <!-- 弹窗：同步到手机 (微信扫一扫 / 复制链接) -->
+  <div id="sync-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 text-center">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
+          <i data-lucide="smartphone" class="w-4 h-4 text-brand-500"></i>
+          同步最新菜单到 iPhone 17
+        </h3>
+        <button onclick="closeSyncModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3 text-left space-y-1">
+        <p class="text-xs font-bold text-amber-800 flex items-center gap-1">
+          <i data-lucide="info" class="w-3.5 h-3.5"></i> 为什么手机上之前没同步？
+        </p>
+        <p class="text-[11px] text-amber-700 leading-relaxed">
+          为保持 100% 永久免费且免绑卡，网站采用本地存储。电脑后台修改后，用手机微信扫下方二维码即可一键将修改同步存入手机！
+        </p>
+      </div>
+
+      <!-- 二维码展示区 -->
+      <div class="flex flex-col items-center justify-center py-2">
+        <div class="p-3 bg-white border-2 border-brand-200 rounded-2xl shadow-sm inline-block">
+          <img id="sync-qr-image" src="" alt="微信扫码同步" class="w-44 h-44 object-contain">
+        </div>
+        <p class="text-xs font-bold text-slate-800 mt-2.5 flex items-center gap-1">
+          <i data-lucide="scan-line" class="w-3.5 h-3.5 text-brand-500"></i>
+          用 iPhone 17 打开微信扫一扫
+        </p>
+        <p class="text-[11px] text-slate-400 mt-0.5">扫码打开后，手机立即永久更新最新菜谱！</p>
+      </div>
+
+      <!-- 快捷复制链接 -->
+      <div class="pt-2 border-t border-slate-100 flex items-center gap-2">
+        <button onclick="copySyncLink()" class="flex-1 py-2 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-xl text-xs font-bold border border-brand-200 flex items-center justify-center gap-1.5 transition-all">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i> 复制微信同步链接
+        </button>
+        <button onclick="closeSyncModal()" class="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold">
+          关闭
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- 弹窗：编辑 / 新增菜品 -->
   <div id="edit-dish-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">

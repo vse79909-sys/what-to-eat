@@ -285,6 +285,7 @@ window.addEventListener('storage', (e) => {
 function initApp() {
   loadUiSettings();
   loadFromStorage();
+  checkUrlSync();
   initCalendarDates();
   renderWeekSelector();
   renderCurrentDayMeals();
@@ -300,6 +301,63 @@ function initApp() {
   // 初始化 Lucide 图标
   if (window.lucide) {
     lucide.createIcons();
+  }
+}
+
+function base64ToUtf8(str) {
+  return decodeURIComponent(Array.prototype.map.call(atob(str), (c) => {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+}
+
+// 检查 URL 中是否有来自大厨后台的同步参数 (?sync=...)
+function checkUrlSync() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const syncParam = urlParams.get('sync');
+    if (!syncParam) return;
+
+    const jsonStr = base64ToUtf8(decodeURIComponent(syncParam));
+    const payload = JSON.parse(jsonStr);
+
+    if (payload && (payload.diffs || payload.categories || payload.deletedIds)) {
+      let currentDishes = localStorage.getItem('wt_dishes')
+        ? JSON.parse(localStorage.getItem('wt_dishes'))
+        : JSON.parse(JSON.stringify(DEFAULT_DISHES));
+
+      if (payload.deletedIds && payload.deletedIds.length > 0) {
+        currentDishes = currentDishes.filter(d => !payload.deletedIds.includes(d.id));
+      }
+
+      if (payload.diffs && payload.diffs.length > 0) {
+        payload.diffs.forEach(diff => {
+          const idx = currentDishes.findIndex(d => d.id === diff.id);
+          if (idx >= 0) {
+            currentDishes[idx] = { ...currentDishes[idx], ...diff };
+          } else {
+            currentDishes.push(diff);
+          }
+        });
+      }
+
+      localStorage.setItem('wt_dishes', JSON.stringify(currentDishes));
+      appState.dishes = currentDishes;
+
+      if (payload.categories && Array.isArray(payload.categories)) {
+        localStorage.setItem('wt_categories', JSON.stringify(payload.categories));
+        appState.categories = payload.categories;
+      }
+
+      // 移除 URL 中的 sync 参数，保持地址栏干净
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+
+      setTimeout(() => {
+        showToast('🎉 收到大厨最新菜单更新，已成功同步到手机！');
+      }, 350);
+    }
+  } catch (e) {
+    console.warn('URL 同步数据解析失败', e);
   }
 }
 
