@@ -201,3 +201,13 @@ body.layout-single-col #dishes-grid .dish-card .card-action-btn {
   opacity: 1 !important;
   transform: translate(-50%, 0) !important;
 }
+
+/* iOS 全屏安全区适配（主屏幕全屏模式） */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  nav.fixed.bottom-0 {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+  body {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
