@@ -1,0 +1,1396 @@
+/**
+ * 《吃什么》 - 小两口专属家庭点菜与排餐系统
+ * 业务逻辑核心控制器
+ */
+
+// --- 初始预置菜谱数据 ---
+const DEFAULT_CATEGORIES = ['家常荤菜', '清爽素菜', '暖胃靓汤', '主食面点', '烘焙甜品'];
+
+const DEFAULT_DISHES = [
+  {
+    id: 'dish_1',
+    name: '秘制可乐鸡翅',
+    category: '家常荤菜',
+    tags: ['拿手好戏', '甜口浓郁', '下饭神器'],
+    notes: '女朋友最爱吃！收汁要浓稠，多撒白芝麻',
+    image: 'https://images.unsplash.com/photo-1527477378370-4f364e83c7df?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 100000
+  },
+  {
+    id: 'dish_2',
+    name: '经典番茄炒蛋',
+    category: '清爽素菜',
+    tags: ['快手简单', '酸甜开胃', '下饭神器'],
+    notes: '鸡蛋炒嫩一点，番茄一定要炒出浓沙',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 90000
+  },
+  {
+    id: 'dish_3',
+    name: '老火玉米排骨汤',
+    category: '暖胃靓汤',
+    tags: ['清淡鲜甜', '滋补养胃'],
+    notes: '文火慢炖1.5小时，玉米选甜玉米',
+    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 80000
+  },
+  {
+    id: 'dish_4',
+    name: '招牌红烧肉',
+    category: '家常荤菜',
+    tags: ['大厨拿手', '软糯咸甜', '肥而不腻'],
+    notes: '小火慢煨40分钟，一定要放冰糖炒糖色',
+    image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 70000
+  },
+  {
+    id: 'dish_5',
+    name: '手撕蒜香包菜',
+    category: '清爽素菜',
+    tags: ['微辣爽口', '快手下饭', '脆嫩'],
+    notes: '大火爆炒，出锅前淋香醋和生抽',
+    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 60000
+  },
+  {
+    id: 'dish_6',
+    name: '正宗四川麻婆豆腐',
+    category: '家常荤菜',
+    tags: ['麻辣过瘾', '拌饭无敌'],
+    notes: '嫩豆腐焯水去豆腥，撒汉源大红袍花椒粉',
+    image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 50000
+  },
+  {
+    id: 'dish_7',
+    name: '蒜蓉粉丝蒸大虾',
+    category: '家常荤菜',
+    tags: ['鲜香弹牙', '大餐硬菜'],
+    notes: '金银蒜蓉酱要调香，粉丝提前温水泡软',
+    image: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 40000
+  },
+  {
+    id: 'dish_8',
+    name: '松茸鲜菌鸡汤',
+    category: '暖胃靓汤',
+    tags: ['滋补养颜', '原汁原味'],
+    notes: '只放盐和枸杞，喝的就是原始山野鲜味',
+    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 30000
+  },
+  {
+    id: 'dish_9',
+    name: '老北京秘制炸酱面',
+    category: '主食面点',
+    tags: ['劲道爽口', '酱香浓郁'],
+    notes: '五花肉丁煸出油，黄瓜丝豆芽菜码给足',
+    image: 'https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 20000
+  },
+  {
+    id: 'dish_10',
+    name: '焦糖香草布丁',
+    category: '烘焙甜品',
+    tags: ['香甜解腻', '饭后甜点'],
+    notes: '冷藏4小时口感最佳，女朋友饭后奖励',
+    image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 10000
+  }
+];
+
+// --- 全局状态管理 ---
+let appState = {
+  activeTab: 'plan',
+  weekOffset: 0, // 0 表示当前周, -1 上周, +1 下周
+  selectedDateStr: '', // 当前选中的具体日期 YYYY-MM-DD
+  categories: [],
+  dishes: [],
+  mealPlans: {}, // 格式: { "2026-09-23": { lunch: ['dish_1'], dinner: ['dish_2', 'dish_3'] } }
+  activeCategoryFilter: '全部',
+  pickerTargetMeal: 'lunch', // 当前点菜弹窗目标: 'lunch' 或 'dinner'
+  tempUploadImage: '' // 临时拍照压缩后的 base64
+};
+
+// --- 初始化与本地存储 ---
+function initApp() {
+  loadFromStorage();
+  initCalendarDates();
+  renderWeekSelector();
+  renderCurrentDayMeals();
+  renderCategoryFilterBar();
+  renderDishesGrid();
+  renderAdminCategories();
+  renderAdminTable();
+  updateStats();
+
+  // 初始化云端数据同步引擎
+  if (typeof CloudSync !== 'undefined') {
+    CloudSync.init();
+  }
+
+  // 初始化 Lucide 图标
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function renderAllViews() {
+  initCalendarDates();
+  renderWeekSelector();
+  renderCurrentDayMeals();
+  renderCategoryFilterBar();
+  renderDishesGrid();
+  renderAdminCategories();
+  renderAdminTable();
+  updateStats();
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function loadFromStorage() {
+  try {
+    const savedDishes = localStorage.getItem('wt_dishes');
+    appState.dishes = savedDishes ? JSON.parse(savedDishes) : DEFAULT_DISHES;
+
+    const savedCats = localStorage.getItem('wt_categories');
+    appState.categories = savedCats ? JSON.parse(savedCats) : DEFAULT_CATEGORIES;
+
+    const savedPlans = localStorage.getItem('wt_meal_plans');
+    appState.mealPlans = savedPlans ? JSON.parse(savedPlans) : {};
+  } catch (e) {
+    console.error('读取存储失败，重置为默认数据', e);
+    appState.dishes = DEFAULT_DISHES;
+    appState.categories = DEFAULT_CATEGORIES;
+    appState.mealPlans = {};
+  }
+}
+
+function saveToStorage() {
+  try {
+    localStorage.setItem('wt_dishes', JSON.stringify(appState.dishes));
+    localStorage.setItem('wt_categories', JSON.stringify(appState.categories));
+    localStorage.setItem('wt_meal_plans', JSON.stringify(appState.mealPlans));
+    updateStats();
+  } catch (e) {
+    console.warn('存储配额超限警告', e);
+    showToast('存储警告：图片较多，建议定期导出备份！');
+  }
+
+  // 若已连接云端数据库，自动防抖同步到云端
+  if (typeof CloudSync !== 'undefined' && CloudSync.isConnected) {
+    CloudSync.debouncedPushAll();
+  }
+}
+
+// --- 标签页切换 ---
+function switchTab(tabId) {
+  appState.activeTab = tabId;
+
+  // 切换内容区域
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  const target = document.getElementById(`tab-${tabId}`);
+  if (target) target.classList.remove('hidden');
+
+  // 切换电脑端导航激活态
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+
+  // 切换手机端底部导航激活态
+  document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+
+  // 切到不同 tab 时刷新相应界面
+  if (tabId === 'dishes') {
+    renderCategoryFilterBar();
+    renderDishesGrid();
+  } else if (tabId === 'admin') {
+    renderAdminCategories();
+    renderAdminTable();
+    updateStats();
+  } else if (tabId === 'plan') {
+    renderCurrentDayMeals();
+  } else if (tabId === 'add') {
+    renderCategorySelectOptions('new-dish-category');
+  }
+
+  // 重新挂载图标
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// --- 周日历与日期计算 ---
+function getWeekDates(offset = 0) {
+  const now = new Date();
+  // 加上周偏移量 (offset * 7 天)
+  now.setDate(now.getDate() + offset * 7);
+
+  // 获取当前是星期几 (0是周日, 1是周一)
+  const currentDay = now.getDay();
+  // 转换为以周一为第一天的偏移 (0: 周一, ..., 6: 周日)
+  const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay;
+
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayDiff);
+
+  const weekDays = [];
+  const weekNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${date}`;
+
+    // 判断是否是真实系统今天
+    const realToday = new Date();
+    const isRealToday = (
+      realToday.getFullYear() === d.getFullYear() &&
+      realToday.getMonth() === d.getMonth() &&
+      realToday.getDate() === d.getDate()
+    );
+
+    weekDays.push({
+      dateStr,
+      month: d.getMonth() + 1,
+      dayNumber: d.getDate(),
+      weekName: weekNames[i],
+      isToday: isRealToday
+    });
+  }
+
+  return weekDays;
+}
+
+function initCalendarDates() {
+  const weekDays = getWeekDates(appState.weekOffset);
+  // 默认选中真实今天，如果没有匹配的（非本周），选中周一
+  const todayItem = weekDays.find(d => d.isToday);
+  appState.selectedDateStr = todayItem ? todayItem.dateStr : weekDays[0].dateStr;
+}
+
+function changeWeek(diff) {
+  appState.weekOffset += diff;
+  const weekDays = getWeekDates(appState.weekOffset);
+  appState.selectedDateStr = weekDays[0].dateStr;
+  renderWeekSelector();
+  renderCurrentDayMeals();
+}
+
+function resetToCurrentWeek() {
+  appState.weekOffset = 0;
+  initCalendarDates();
+  renderWeekSelector();
+  renderCurrentDayMeals();
+}
+
+function selectDay(dateStr) {
+  appState.selectedDateStr = dateStr;
+  renderWeekSelector();
+  renderCurrentDayMeals();
+}
+
+// --- 渲染周选择胶囊 ---
+function renderWeekSelector() {
+  const weekDays = getWeekDates(appState.weekOffset);
+  const container = document.getElementById('week-day-selector');
+  if (!container) return;
+
+  // 更新周标签
+  const weekLabel = document.getElementById('current-week-label');
+  if (weekLabel) {
+    if (appState.weekOffset === 0) weekLabel.textContent = '本周菜单';
+    else if (appState.weekOffset === 1) weekLabel.textContent = '下周菜单';
+    else if (appState.weekOffset === -1) weekLabel.textContent = '上周菜单';
+    else weekLabel.textContent = `${appState.weekOffset > 0 ? '+' : ''}${appState.weekOffset}周菜单`;
+  }
+
+  // 顶部今天日期简述
+  const todayDesc = document.getElementById('today-date-text');
+  if (todayDesc) {
+    const activeDay = weekDays.find(d => d.dateStr === appState.selectedDateStr);
+    if (activeDay) {
+      todayDesc.textContent = `${activeDay.month}月${activeDay.dayNumber}日 ${activeDay.weekName}${activeDay.isToday ? ' (今天)' : ''}`;
+    }
+  }
+
+  container.innerHTML = weekDays.map(day => {
+    const isActive = day.dateStr === appState.selectedDateStr;
+    const plan = appState.mealPlans[day.dateStr];
+    const hasDishes = plan && ((plan.lunch && plan.lunch.length > 0) || (plan.dinner && plan.dinner.length > 0));
+
+    return `
+      <button onclick="selectDay('${day.dateStr}')" 
+        class="day-pill flex-1 min-w-[72px] py-2.5 px-2 rounded-2xl flex flex-col items-center justify-center border transition-all text-xs cursor-pointer ${
+          isActive 
+            ? 'active bg-brand-500 text-white border-transparent' 
+            : 'bg-white text-stone-700 border-stone-200/80 hover:bg-stone-50'
+        }">
+        <span class="text-[11px] font-medium opacity-80">${day.weekName}</span>
+        <span class="text-base font-black my-0.5">${day.dayNumber}</span>
+        <div class="flex items-center gap-1 mt-0.5">
+          ${day.isToday ? '<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>' : ''}
+          ${hasDishes ? '<span class="text-[9px] font-bold ' + (isActive ? 'text-white/90' : 'text-brand-600') + '">已点</span>' : '<span class="text-[9px] opacity-40">未点</span>'}
+        </div>
+      </button>
+    `;
+  }).join('');
+}
+
+// --- 渲染当天午餐与晚餐 ---
+function renderCurrentDayMeals() {
+  const plan = appState.mealPlans[appState.selectedDateStr] || { lunch: [], dinner: [] };
+  const lunchContainer = document.getElementById('lunch-dish-list');
+  const dinnerContainer = document.getElementById('dinner-dish-list');
+
+  if (lunchContainer) {
+    lunchContainer.innerHTML = renderMealDishesList(plan.lunch, 'lunch');
+  }
+  if (dinnerContainer) {
+    dinnerContainer.innerHTML = renderMealDishesList(plan.dinner, 'dinner');
+  }
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function renderMealDishesList(dishIds = [], mealType) {
+  if (!dishIds || dishIds.length === 0) {
+    return `
+      <div class="py-7 flex flex-col items-center justify-center text-center text-stone-400 border border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
+        <i data-lucide="cooking-pot" class="w-7 h-7 stroke-1 text-stone-300 mb-1.5"></i>
+        <p class="text-xs font-bold text-stone-500">还空空如也呢</p>
+        <p class="text-[11px] text-stone-400 mt-0.5">快点击右上角“+ 点菜”为女朋友排餐吧</p>
+      </div>
+    `;
+  }
+
+  return dishIds.map((dishId, idx) => {
+    const dish = appState.dishes.find(d => d.id === dishId);
+    if (!dish) return '';
+
+    return `
+      <div class="dish-card flex items-center justify-between p-2.5 bg-stone-50/80 hover:bg-stone-50 border border-stone-200/60 rounded-2xl group transition-all">
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="${dish.image}" alt="${dish.name}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm">
+          <div class="min-w-0">
+            <h4 class="text-sm font-black text-stone-900 truncate">${dish.name}</h4>
+            <div class="flex flex-wrap gap-1 mt-0.5">
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100/70 text-amber-700 font-bold">${dish.category}</span>
+              ${(dish.tags || []).slice(0, 2).map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-200/60 text-stone-600">${tag}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+        <button onclick="removeDishFromMeal('${mealType}', ${idx})" title="移除此菜" class="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-2 flex-shrink-0">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function removeDishFromMeal(mealType, index) {
+  const plan = appState.mealPlans[appState.selectedDateStr];
+  if (!plan || !plan[mealType]) return;
+
+  plan[mealType].splice(index, 1);
+  saveToStorage();
+  renderCurrentDayMeals();
+  renderWeekSelector();
+  showToast('已从餐单中移除');
+}
+
+// --- 点菜选择器弹窗 ---
+function openDishPicker(mealType) {
+  appState.pickerTargetMeal = mealType;
+  const modal = document.getElementById('dish-picker-modal');
+  const title = document.getElementById('picker-target-title');
+  const search = document.getElementById('picker-search-input');
+
+  const weekDays = getWeekDates(appState.weekOffset);
+  const activeDay = weekDays.find(d => d.dateStr === appState.selectedDateStr);
+  const dayName = activeDay ? `${activeDay.weekName} (${activeDay.month}月${activeDay.dayNumber}日)` : '';
+  const mealName = mealType === 'lunch' ? '☀️ 午餐' : '🌙 晚餐';
+
+  if (title) {
+    title.textContent = `${dayName} · ${mealName}`;
+  }
+  if (search) {
+    search.value = '';
+  }
+
+  renderPickerDishes(appState.dishes);
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function closeDishPicker() {
+  const modal = document.getElementById('dish-picker-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function filterPickerDishes() {
+  const keyword = (document.getElementById('picker-search-input').value || '').trim().toLowerCase();
+  const filtered = appState.dishes.filter(d => {
+    return d.name.toLowerCase().includes(keyword) ||
+           d.category.toLowerCase().includes(keyword) ||
+           (d.tags || []).some(t => t.toLowerCase().includes(keyword));
+  });
+  renderPickerDishes(filtered);
+}
+
+function renderPickerDishes(dishList) {
+  const container = document.getElementById('picker-dishes-container');
+  if (!container) return;
+
+  if (dishList.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-2 py-10 text-center text-stone-400">
+        <p class="text-xs">没有找到符合的菜品~</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = dishList.map(dish => {
+    return `
+      <div onclick="addDishToCurrentMeal('${dish.id}')" 
+        class="dish-card bg-stone-50 hover:bg-amber-50/50 p-2.5 rounded-2xl border border-stone-200/80 cursor-pointer flex flex-col justify-between group transition-all">
+        <div>
+          <div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-stone-200">
+            <img src="${dish.image}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <span class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/60 text-white backdrop-blur-sm">${dish.category}</span>
+          </div>
+          <h4 class="text-xs font-black text-stone-900 truncate mb-1">${dish.name}</h4>
+          <p class="text-[10px] text-stone-400 truncate">${(dish.tags || []).join(' · ')}</p>
+        </div>
+        <button type="button" class="mt-2 w-full py-1 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 shadow-sm">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> 加入
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function addDishToCurrentMeal(dishId) {
+  const dateStr = appState.selectedDateStr;
+  const mealType = appState.pickerTargetMeal;
+
+  if (!appState.mealPlans[dateStr]) {
+    appState.mealPlans[dateStr] = { lunch: [], dinner: [] };
+  }
+  if (!appState.mealPlans[dateStr][mealType]) {
+    appState.mealPlans[dateStr][mealType] = [];
+  }
+
+  appState.mealPlans[dateStr][mealType].push(dishId);
+  saveToStorage();
+  renderCurrentDayMeals();
+  renderWeekSelector();
+
+  const dish = appState.dishes.find(d => d.id === dishId);
+  showToast(`已成功添加【${dish ? dish.name : '新菜品'}】！`);
+}
+
+// --- 选择困难拯救器：一键盲盒搭配 (一荤一素一汤) ---
+function surpriseMealPlan() {
+  const meats = appState.dishes.filter(d => d.category.includes('荤') || d.category.includes('肉') || d.category.includes('鸡') || d.category.includes('鱼'));
+  const vegs = appState.dishes.filter(d => d.category.includes('素') || d.category.includes('菜') || d.category.includes('清爽'));
+  const soups = appState.dishes.filter(d => d.category.includes('汤'));
+
+  // 随机挑出
+  const pickRandom = (arr) => arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
+
+  const chosen = [];
+  const m = pickRandom(meats.length > 0 ? meats : appState.dishes);
+  if (m) chosen.push(m.id);
+
+  const v = pickRandom(vegs.length > 0 ? vegs : appState.dishes);
+  if (v && !chosen.includes(v.id)) chosen.push(v.id);
+
+  const s = pickRandom(soups.length > 0 ? soups : appState.dishes);
+  if (s && !chosen.includes(s.id)) chosen.push(s.id);
+
+  const dateStr = appState.selectedDateStr;
+  if (!appState.mealPlans[dateStr]) {
+    appState.mealPlans[dateStr] = { lunch: [], dinner: [] };
+  }
+
+  // 默认直接赋给晚餐（如果是晚上），或根据当前时间决定
+  const currentHour = new Date().getHours();
+  const targetMeal = currentHour < 14 ? 'lunch' : 'dinner';
+  appState.mealPlans[dateStr][targetMeal] = chosen;
+
+  saveToStorage();
+  renderCurrentDayMeals();
+  renderWeekSelector();
+  showToast(`盲盒摇号成功！已为今天${targetMeal === 'lunch' ? '午餐' : '晚餐'}自动搭配了 3 道菜！✨`);
+}
+
+// --- 菜品大厅与分类筛选 ---
+function renderCategoryFilterBar() {
+  const container = document.getElementById('category-filter-bar');
+  if (!container) return;
+
+  const allCats = ['全部', ...appState.categories];
+  container.innerHTML = allCats.map(cat => {
+    const isActive = appState.activeCategoryFilter === cat;
+    return `
+      <button onclick="setCategoryFilter('${cat}')" 
+        class="px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+          isActive 
+            ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/20' 
+            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+        }">
+        ${cat}
+      </button>
+    `;
+  }).join('');
+}
+
+function setCategoryFilter(cat) {
+  appState.activeCategoryFilter = cat;
+  renderCategoryFilterBar();
+  filterDishes();
+}
+
+function filterDishes() {
+  const searchInput = document.getElementById('search-dish-input');
+  const keyword = (searchInput ? searchInput.value : '').trim().toLowerCase();
+  const currentCat = appState.activeCategoryFilter;
+
+  const filtered = appState.dishes.filter(dish => {
+    const matchCat = (currentCat === '全部') || (dish.category === currentCat);
+    const matchKeyword = !keyword || 
+      dish.name.toLowerCase().includes(keyword) ||
+      dish.category.toLowerCase().includes(keyword) ||
+      (dish.tags || []).some(t => t.toLowerCase().includes(keyword));
+    return matchCat && matchKeyword;
+  });
+
+  renderDishesGrid(filtered);
+}
+
+function renderDishesGrid(list = null) {
+  const container = document.getElementById('dishes-grid');
+  if (!container) return;
+
+  const displayList = list !== null ? list : appState.dishes;
+
+  if (displayList.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-16 text-center text-stone-400">
+        <i data-lucide="inbox" class="w-10 h-10 stroke-1 mx-auto text-stone-300 mb-2"></i>
+        <p class="text-sm font-bold text-stone-500">没有找到相关菜品</p>
+        <p class="text-xs text-stone-400 mt-1">快去“拍新菜”里增加第一道属于你们的拿手美味吧~</p>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  container.innerHTML = displayList.map(dish => {
+    return `
+      <div class="dish-card bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-soft flex flex-col justify-between group">
+        <div>
+          <div class="relative w-full aspect-[4/3] bg-stone-100 overflow-hidden">
+            <img src="${dish.image}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <span class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 text-white backdrop-blur-md">${dish.category}</span>
+          </div>
+          <div class="p-3">
+            <h3 class="font-black text-stone-900 text-sm truncate mb-1">${dish.name}</h3>
+            <div class="flex flex-wrap gap-1 mb-2">
+              ${(dish.tags || []).slice(0, 2).map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">${tag}</span>`).join('')}
+            </div>
+            ${dish.notes ? `<p class="text-[10px] text-stone-400 line-clamp-1 italic">“${dish.notes}”</p>` : ''}
+          </div>
+        </div>
+        <div class="p-2.5 pt-0 border-t border-stone-50 flex gap-1.5">
+          <button onclick="quickAddToToday('${dish.id}', 'lunch')" class="flex-1 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-[11px] font-bold text-center transition-colors">
+            + 午餐
+          </button>
+          <button onclick="quickAddToToday('${dish.id}', 'dinner')" class="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[11px] font-bold text-center transition-colors">
+            + 晚餐
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function quickAddToToday(dishId, mealType) {
+  const dateStr = appState.selectedDateStr;
+  if (!appState.mealPlans[dateStr]) {
+    appState.mealPlans[dateStr] = { lunch: [], dinner: [] };
+  }
+  if (!appState.mealPlans[dateStr][mealType]) {
+    appState.mealPlans[dateStr][mealType] = [];
+  }
+  appState.mealPlans[dateStr][mealType].push(dishId);
+  saveToStorage();
+  renderCurrentDayMeals();
+  renderWeekSelector();
+
+  const dish = appState.dishes.find(d => d.id === dishId);
+  showToast(`已将【${dish ? dish.name : '菜品'}】加入排餐！`);
+}
+
+// --- 拍照 / 选图与压缩上传 ---
+function triggerCameraInput() {
+  const input = document.getElementById('camera-file-input');
+  if (input) input.click();
+}
+
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const rawDataUrl = e.target.result;
+    // 压缩图片至最大宽 800px，确保本地存储超快不卡顿
+    compressImage(rawDataUrl, 800, 0.75, (compressedBase64) => {
+      appState.tempUploadImage = compressedBase64;
+      const previewImg = document.getElementById('photo-preview-img');
+      const placeholder = document.getElementById('upload-placeholder');
+      const reBtn = document.getElementById('re-upload-btn');
+
+      if (previewImg) {
+        previewImg.src = compressedBase64;
+        previewImg.classList.remove('hidden');
+      }
+      if (placeholder) placeholder.classList.add('hidden');
+      if (reBtn) reBtn.classList.remove('hidden');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function compressImage(base64Src, maxWidth, quality, callback) {
+  const img = new Image();
+  img.src = base64Src;
+  img.onload = function() {
+    let width = img.width;
+    let height = img.height;
+
+    if (width > maxWidth) {
+      height = Math.round((height * maxWidth) / width);
+      width = maxWidth;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const compressed = canvas.toDataURL('image/jpeg', quality);
+    callback(compressed);
+  };
+}
+
+function appendTag(tagText) {
+  const input = document.getElementById('new-dish-tags');
+  if (!input) return;
+  const current = input.value.trim();
+  const tags = current ? current.split(/[,，\s]+/) : [];
+  if (!tags.includes(tagText)) {
+    tags.push(tagText);
+    input.value = tags.join(', ');
+  }
+}
+
+function renderCategorySelectOptions(selectElementId, selectedValue = '') {
+  const select = document.getElementById(selectElementId);
+  if (!select) return;
+
+  select.innerHTML = appState.categories.map(cat => {
+    const isSelected = cat === selectedValue ? 'selected' : '';
+    return `<option value="${cat}" ${isSelected}>${cat}</option>`;
+  }).join('');
+}
+
+function saveNewDish() {
+  const nameInput = document.getElementById('new-dish-name');
+  const catSelect = document.getElementById('new-dish-category');
+  const tagsInput = document.getElementById('new-dish-tags');
+  const notesInput = document.getElementById('new-dish-notes');
+
+  const name = (nameInput.value || '').trim();
+  if (!name) {
+    showToast('请填写菜品名称哦~');
+    nameInput.focus();
+    return;
+  }
+
+  // 如果没有拍照，使用精美的默认美食图片占位
+  const photo = appState.tempUploadImage || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+  const category = catSelect.value || appState.categories[0];
+  const tags = (tagsInput.value || '')
+    .split(/[,，\s]+/)
+    .map(t => t.trim())
+    .filter(Boolean);
+  const notes = (notesInput.value || '').trim();
+
+  const newDish = {
+    id: 'dish_' + Date.now(),
+    name,
+    category,
+    tags: tags.length > 0 ? tags : ['大厨拿手'],
+    notes,
+    image: photo,
+    createdAt: Date.now()
+  };
+
+  appState.dishes.unshift(newDish);
+  saveToStorage();
+
+  // 重置表单
+  nameInput.value = '';
+  tagsInput.value = '';
+  notesInput.value = '';
+  appState.tempUploadImage = '';
+  document.getElementById('photo-preview-img').classList.add('hidden');
+  document.getElementById('upload-placeholder').classList.remove('hidden');
+  document.getElementById('re-upload-btn').classList.add('hidden');
+
+  showToast(`🎉 成功收录【${name}】到菜谱库！`);
+  switchTab('dishes');
+}
+
+// --- 管理后台 (Admin) 功能 ---
+function updateStats() {
+  const dishCount = document.getElementById('stat-total-dishes');
+  const catCount = document.getElementById('stat-total-categories');
+  const planCount = document.getElementById('stat-week-planned');
+
+  if (dishCount) dishCount.textContent = appState.dishes.length;
+  if (catCount) catCount.textContent = appState.categories.length;
+
+  if (planCount) {
+    let totalPlanned = 0;
+    const weekDays = getWeekDates(appState.weekOffset);
+    weekDays.forEach(day => {
+      const p = appState.mealPlans[day.dateStr];
+      if (p) {
+        totalPlanned += (p.lunch ? p.lunch.length : 0);
+        totalPlanned += (p.dinner ? p.dinner.length : 0);
+      }
+    });
+    planCount.textContent = totalPlanned;
+  }
+}
+
+function renderAdminCategories() {
+  const container = document.getElementById('admin-categories-tags');
+  if (!container) return;
+
+  container.innerHTML = appState.categories.map(cat => {
+    return `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700 shadow-sm">
+        ${cat}
+        <button onclick="deleteCategory('${cat}')" class="text-stone-400 hover:text-rose-500 transition-colors">
+          <i data-lucide="x" class="w-3 h-3"></i>
+        </button>
+      </span>
+    `;
+  }).join('');
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function addCustomCategory() {
+  const input = document.getElementById('new-category-input');
+  const cat = (input.value || '').trim();
+  if (!cat) return;
+
+  if (!appState.categories.includes(cat)) {
+    appState.categories.push(cat);
+    saveToStorage();
+    renderAdminCategories();
+    renderCategoryFilterBar();
+    showToast(`已添加分类【${cat}】`);
+  }
+  input.value = '';
+}
+
+function deleteCategory(cat) {
+  if (appState.categories.length <= 1) {
+    showToast('至少保留一个分类哦！');
+    return;
+  }
+  if (confirm(`确定要删除分类【${cat}】吗？现有属于该分类的菜品不会丢失。`)) {
+    appState.categories = appState.categories.filter(c => c !== cat);
+    saveToStorage();
+    renderAdminCategories();
+    renderCategoryFilterBar();
+    showToast(`已删除分类【${cat}】`);
+  }
+}
+
+function renderAdminTable() {
+  const tbody = document.getElementById('admin-dishes-tbody');
+  if (!tbody) return;
+
+  if (appState.dishes.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-stone-400 text-xs">暂无任何菜品</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = appState.dishes.map(dish => {
+    return `
+      <tr class="hover:bg-stone-50/70 transition-colors">
+        <td class="py-2.5 px-3">
+          <img src="${dish.image}" alt="${dish.name}" class="w-10 h-10 rounded-lg object-cover bg-stone-100 shadow-sm">
+        </td>
+        <td class="py-2.5 px-3 font-bold text-stone-900 text-xs">${dish.name}</td>
+        <td class="py-2.5 px-3 text-xs text-stone-600">
+          <span class="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-semibold">${dish.category}</span>
+        </td>
+        <td class="py-2.5 px-3 text-xs text-stone-400 truncate max-w-[140px]">${(dish.tags || []).join(', ')}</td>
+        <td class="py-2.5 px-3 text-right space-x-1">
+          <button onclick="openEditDishModal('${dish.id}')" class="px-2.5 py-1 text-xs font-bold text-brand-600 hover:bg-brand-50 rounded-lg transition-colors">修改</button>
+          <button onclick="deleteDishConfirm('${dish.id}')" class="px-2.5 py-1 text-xs font-bold text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">删除</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// --- 菜品编辑与删除 ---
+let tempEditPhoto = '';
+
+function openEditDishModal(dishId) {
+  const dish = appState.dishes.find(d => d.id === dishId);
+  if (!dish) return;
+
+  tempEditPhoto = '';
+  document.getElementById('edit-dish-id').value = dish.id;
+  document.getElementById('edit-dish-name').value = dish.name;
+  document.getElementById('edit-dish-tags').value = (dish.tags || []).join(', ');
+
+  renderCategorySelectOptions('edit-dish-category', dish.category);
+
+  const modal = document.getElementById('edit-dish-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeEditDishModal() {
+  const modal = document.getElementById('edit-dish-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleEditPhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    compressImage(e.target.result, 800, 0.75, (base64) => {
+      tempEditPhoto = base64;
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitEditDish() {
+  const id = document.getElementById('edit-dish-id').value;
+  const name = document.getElementById('edit-dish-name').value.trim();
+  const category = document.getElementById('edit-dish-category').value;
+  const tags = document.getElementById('edit-dish-tags').value.split(/[,，\s]+/).filter(Boolean);
+
+  if (!name) {
+    showToast('菜名不能为空！');
+    return;
+  }
+
+  const dish = appState.dishes.find(d => d.id === id);
+  if (dish) {
+    dish.name = name;
+    dish.category = category;
+    dish.tags = tags;
+    if (tempEditPhoto) {
+      dish.image = tempEditPhoto;
+    }
+    saveToStorage();
+    renderAdminTable();
+    renderDishesGrid();
+    renderCurrentDayMeals();
+    closeEditDishModal();
+    showToast('菜品信息修改成功！');
+  }
+}
+
+function deleteDishConfirm(dishId) {
+  const dish = appState.dishes.find(d => d.id === dishId);
+  if (!dish) return;
+
+  if (confirm(`确定要从菜谱中删除【${dish.name}】吗？`)) {
+    appState.dishes = appState.dishes.filter(d => d.id !== dishId);
+    // 从排餐计划中也清洗掉
+    Object.keys(appState.mealPlans).forEach(dateStr => {
+      const p = appState.mealPlans[dateStr];
+      if (p.lunch) p.lunch = p.lunch.filter(id => id !== dishId);
+      if (p.dinner) p.dinner = p.dinner.filter(id => id !== dishId);
+    });
+
+    saveToStorage();
+    renderAdminTable();
+    renderDishesGrid();
+    renderCurrentDayMeals();
+    showToast(`已删除【${dish.name}】`);
+  }
+}
+
+// --- 数据备份与还原 ---
+function exportDataBackup() {
+  const exportData = {
+    appName: '吃什么 - 家庭点菜系统备份',
+    version: '1.0',
+    exportTime: new Date().toISOString(),
+    categories: appState.categories,
+    dishes: appState.dishes,
+    mealPlans: appState.mealPlans
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `吃什么-家庭菜谱备份-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('备份文件已导出成功！');
+}
+
+function importDataBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.dishes && Array.isArray(data.dishes)) {
+        appState.dishes = data.dishes;
+        if (data.categories) appState.categories = data.categories;
+        if (data.mealPlans) appState.mealPlans = data.mealPlans;
+
+        saveToStorage();
+        initApp();
+        showToast('数据恢复成功！');
+      } else {
+        alert('文件格式不正确，未能解析菜谱数据！');
+      }
+    } catch (err) {
+      alert('读取备份文件失败，请检查文件是否完整！');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetDefaultDishesConfirm() {
+  if (confirm('确定要恢复为内置的经典 10 道示范菜谱吗？现有自定义菜谱将被重置。')) {
+    appState.dishes = DEFAULT_DISHES;
+    appState.categories = DEFAULT_CATEGORIES;
+    saveToStorage();
+    initApp();
+    showToast('已重置为系统默认精选菜谱！');
+  }
+}
+
+// --- 一键分享点菜清单给大厨 (微信点菜) ---
+function shareMealPlanToChef() {
+  const dateStr = appState.selectedDateStr;
+  const currentPlan = appState.mealPlans[dateStr] || { lunch: [], dinner: [] };
+
+  const getDishNames = (ids) => {
+    if (!ids || ids.length === 0) return '尚未点菜（等大厨发挥~）';
+    const names = ids.map(id => {
+      const d = appState.dishes.find(item => item.id === id);
+      return d ? d.name : '';
+    }).filter(Boolean);
+    return names.length > 0 ? names.join('、') : '尚未点菜（等大厨发挥~）';
+  };
+
+  const lunchDishes = getDishNames(currentPlan.lunch);
+  const dinnerDishes = getDishNames(currentPlan.dinner);
+
+  // 计算星期几
+  const dateObj = new Date(dateStr + 'T00:00:00');
+  const daysOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  const dayName = daysOfWeek[dateObj.getDay()];
+  const formattedDate = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日 (${dayName})`;
+
+  const shareText = `🍽️ 【${formattedDate} 点菜清单来啦！】\n☀️ 午餐：${lunchDishes}\n🌙 晚餐：${dinnerDishes}\n\n👨‍🍳 大厨请批阅，准备好大展身手啦~ ❤️`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(shareText).then(() => {
+      showToast('📋 已复制点菜清单！快去微信发给大厨吧~');
+    }).catch(() => {
+      copyShareFallback(shareText);
+    });
+  } else {
+    copyShareFallback(shareText);
+  }
+}
+
+function copyShareFallback(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showToast('📋 已复制点菜清单！快去微信发给大厨吧~');
+  } catch (err) {
+    prompt('请长按下方文字复制点菜清单发给微信大厨：', text);
+  }
+  document.body.removeChild(textarea);
+}
+
+// --- ☁️ 云端多端数据实时同步模块 ---
+const CloudSync = {
+  client: null,
+  isConnected: false,
+  isSyncing: false,
+  debounceTimer: null,
+
+  getConfig() {
+    try {
+      const localConf = localStorage.getItem('wt_cloud_config');
+      if (localConf) {
+        const parsed = JSON.parse(localConf);
+        if (parsed.supabaseUrl && parsed.supabaseKey) return parsed;
+      }
+    } catch (e) {}
+
+    if (window.WT_CONFIG && window.WT_CONFIG.supabaseUrl && window.WT_CONFIG.supabaseKey) {
+      return window.WT_CONFIG;
+    }
+    return null;
+  },
+
+  init() {
+    const conf = this.getConfig();
+    const urlInput = document.getElementById('cloud-url-input');
+    const keyInput = document.getElementById('cloud-key-input');
+    if (urlInput && keyInput && conf) {
+      urlInput.value = conf.supabaseUrl || '';
+      keyInput.value = conf.supabaseKey || '';
+    }
+
+    if (conf && conf.supabaseUrl && conf.supabaseKey && window.supabase) {
+      try {
+        this.client = window.supabase.createClient(conf.supabaseUrl, conf.supabaseKey);
+        this.updateBadge('syncing');
+        this.pullFromCloud(true);
+      } catch (e) {
+        console.warn('云端客户端初始化异常:', e);
+        this.updateBadge('error');
+      }
+    } else {
+      this.updateBadge('local');
+    }
+  },
+
+  async testConnection(showToastMsg = false) {
+    const conf = this.getConfig();
+    if (!conf || !conf.supabaseUrl || !conf.supabaseKey) {
+      if (showToastMsg) showToast('请先填写 Project URL 和 Anon Key！');
+      this.updateBadge('local');
+      return false;
+    }
+
+    if (!window.supabase) {
+      if (showToastMsg) showToast('云端 SDK 尚未加载完成，请刷新网页再试');
+      return false;
+    }
+
+    try {
+      this.updateBadge('syncing');
+      const tempClient = window.supabase.createClient(conf.supabaseUrl, conf.supabaseKey);
+      const { data, error } = await tempClient.from('family_store').select('key').limit(1);
+
+      if (error) {
+        console.warn('云端测试失败:', error);
+        this.isConnected = false;
+        this.updateBadge('error');
+        if (showToastMsg) {
+          if (error.code === '42P01') {
+            alert('连接成功，但尚未建立 family_store 数据表！\n请查看帮助展开栏，在控制台 SQL 编辑器中运行建表语句即可。');
+          } else {
+            alert(`连接失败：${error.message || '请检查 URL 和 Key 是否正确'}`);
+          }
+        }
+        return false;
+      }
+
+      this.client = tempClient;
+      this.isConnected = true;
+      this.updateBadge('online');
+      if (showToastMsg) showToast('🎉 云端连接成功！小两口点菜数据已打通！');
+      return true;
+    } catch (e) {
+      console.error('测试连通性出错:', e);
+      this.isConnected = false;
+      this.updateBadge('error');
+      if (showToastMsg) alert(`连接发生异常：${e.message}`);
+      return false;
+    }
+  },
+
+  async pullFromCloud(silent = false) {
+    if (!this.client) return false;
+    this.isSyncing = true;
+    this.updateBadge('syncing');
+
+    try {
+      const { data, error } = await this.client.from('family_store').select('*');
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        let hasChanges = false;
+        data.forEach(row => {
+          if (row.key === 'dishes' && Array.isArray(row.data) && row.data.length > 0) {
+            appState.dishes = row.data;
+            localStorage.setItem('wt_dishes', JSON.stringify(row.data));
+            hasChanges = true;
+          } else if (row.key === 'categories' && Array.isArray(row.data)) {
+            appState.categories = row.data;
+            localStorage.setItem('wt_categories', JSON.stringify(row.data));
+            hasChanges = true;
+          } else if (row.key === 'meal_plans' && typeof row.data === 'object') {
+            appState.mealPlans = row.data;
+            localStorage.setItem('wt_meal_plans', JSON.stringify(row.data));
+            hasChanges = true;
+          }
+        });
+
+        this.isConnected = true;
+        this.updateBadge('online');
+        if (hasChanges) {
+          renderAllViews();
+          if (!silent) showToast('✨ 已成功同步云端最新菜单与排餐！');
+        }
+        return true;
+      } else {
+        // 云端目前为空，自动将当前本地初始数据推送到云端做初始化
+        await this.pushAllToCloud(false);
+        this.isConnected = true;
+        this.updateBadge('online');
+        return true;
+      }
+    } catch (err) {
+      console.warn('从云端同步数据失败:', err);
+      this.isConnected = false;
+      this.updateBadge('error');
+      if (!silent) showToast('同步失败，请检查网络或配置');
+      return false;
+    } finally {
+      this.isSyncing = false;
+    }
+  },
+
+  debouncedPushAll() {
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => {
+      this.pushAllToCloud(false);
+    }, 600);
+  },
+
+  async pushAllToCloud(notify = true) {
+    if (!this.client || !this.isConnected) {
+      const ok = await this.testConnection(false);
+      if (!ok) return false;
+    }
+
+    try {
+      this.updateBadge('syncing');
+      const rows = [
+        { key: 'dishes', data: appState.dishes, updated_at: new Date().toISOString() },
+        { key: 'categories', data: appState.categories, updated_at: new Date().toISOString() },
+        { key: 'meal_plans', data: appState.mealPlans, updated_at: new Date().toISOString() }
+      ];
+
+      const { error } = await this.client.from('family_store').upsert(rows);
+      if (error) throw error;
+
+      this.isConnected = true;
+      this.updateBadge('online');
+      if (notify) showToast('☁️ 本地菜谱与排餐已全部推送到云端！');
+      return true;
+    } catch (e) {
+      console.error('推送到云端失败:', e);
+      this.updateBadge('error');
+      if (notify) alert(`推送失败：${e.message || '请检查数据表权限'}`);
+      return false;
+    }
+  },
+
+  updateBadge(status) {
+    const badge = document.getElementById('cloud-sync-badge');
+    const badgeMobile = document.getElementById('cloud-sync-badge-mobile');
+    const adminStatus = document.getElementById('admin-cloud-status');
+
+    let badgeClass = '';
+    let badgeHtml = '';
+    let mobileText = '';
+    let adminText = '';
+    let adminClass = '';
+
+    if (status === 'online') {
+      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-pointer hover:bg-emerald-100 transition-all';
+      badgeHtml = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>🟢 云端已连接</span>';
+      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>云端</span>';
+      adminText = '🟢 云端正常运行 (实时互通)';
+      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+    } else if (status === 'syncing') {
+      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200';
+      badgeHtml = '<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span><span>🔄 同步中...</span>';
+      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span><span>同步</span>';
+      adminText = '🔄 正在同步数据...';
+      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200';
+    } else if (status === 'error') {
+      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 cursor-pointer hover:bg-rose-100';
+      badgeHtml = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>🔴 云端异常</span>';
+      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span><span>异常</span>';
+      adminText = '🔴 连接异常 (点击排查)';
+      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
+    } else {
+      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200 cursor-pointer hover:bg-stone-200/80';
+      badgeHtml = '<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>本地单机模式</span>';
+      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span><span>单机</span>';
+      adminText = '本地单机模式 (未连接云)';
+      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200';
+    }
+
+    if (badge) {
+      badge.className = badgeClass;
+      badge.innerHTML = badgeHtml;
+    }
+    if (badgeMobile) {
+      badgeMobile.innerHTML = mobileText;
+    }
+    if (adminStatus) {
+      adminStatus.className = adminClass;
+      adminStatus.innerHTML = adminText;
+    }
+  }
+};
+
+// --- 云端同步 UI 控制交互 ---
+function toggleCloudHelp() {
+  const panel = document.getElementById('cloud-help-panel');
+  if (panel) {
+    panel.classList.toggle('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function copyCloudSQL() {
+  const sql = `create table if not exists family_store (
+  key text primary key,
+  data jsonb not null,
+  updated_at timestamp with time zone default now()
+);
+alter table family_store enable row level security;
+create policy "Public Access" on family_store for all using (true) with check (true);`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(sql).then(() => {
+      showToast('✅ 建表 SQL 已复制到剪贴板！');
+    });
+  } else {
+    prompt('请复制建表 SQL：', sql);
+  }
+}
+
+function saveCloudConfig() {
+  const urlInput = document.getElementById('cloud-url-input');
+  const keyInput = document.getElementById('cloud-key-input');
+  const url = (urlInput ? urlInput.value.trim() : '');
+  const key = (keyInput ? keyInput.value.trim() : '');
+
+  if (!url || !key) {
+    if (confirm('确认清空云端配置并切回本地单机模式吗？')) {
+      localStorage.removeItem('wt_cloud_config');
+      CloudSync.client = null;
+      CloudSync.isConnected = false;
+      CloudSync.updateBadge('local');
+      showToast('已切换为本地单机模式');
+    }
+    return;
+  }
+
+  const conf = { supabaseUrl: url, supabaseKey: key };
+  localStorage.setItem('wt_cloud_config', JSON.stringify(conf));
+  showToast('云端配置已保存，正在测试连通性...');
+  CloudSync.init();
+}
+
+function testCloudConnection() {
+  CloudSync.testConnection(true);
+}
+
+function pushLocalToCloud() {
+  CloudSync.pushAllToCloud(true);
+}
+
+function pullCloudToLocal() {
+  CloudSync.pullFromCloud(false);
+}
+
+// 页面可见性或获得焦点时自动静默刷新云端最新数据
+window.addEventListener('focus', () => {
+  if (typeof CloudSync !== 'undefined' && CloudSync.isConnected && !CloudSync.isSyncing) {
+    CloudSync.pullFromCloud(true);
+  }
+});
+
+// --- 轻量 Toast 提示系统 ---
+let toastTimer = null;
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  const msgEl = document.getElementById('toast-message');
+  if (!toast || !msgEl) return;
+
+  msgEl.textContent = message;
+  toast.classList.add('toast-show');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('toast-show');
+  }, 2300);
+}
+
+// 页面加载完成后启动应用
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+});
+

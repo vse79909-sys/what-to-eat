@@ -1,0 +1,63 @@
+/* 自定义样式补充 */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 隐藏滚动条但保留滚动能力 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 标签激活状态高亮 */
+.tab-btn.active {
+  background-color: #ffffff;
+  color: #ea580c;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-tab-btn.active {
+  color: #ea580c;
+}
+
+/* 星期选择胶囊激活 */
+.day-pill.active {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  border-color: transparent;
+}
+
+/* 菜品卡片轻微浮起动效 */
+.dish-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.dish-card:active {
+  transform: scale(0.98);
+}
+@media (hover: hover) {
+  .dish-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Toast 显示动效 */
+.toast-show {
+  opacity: 1 !important;
+  transform: translate(-50%, 0) !important;
+}
