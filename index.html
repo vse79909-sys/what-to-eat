@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>吃什么 - 小两口专属家庭点菜与排餐系统</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +36,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260923_v5">
   <script>
     // 在页面渲染前立即应用保存的 UI 设定，避免界面闪烁
     try {
@@ -82,19 +85,6 @@
         <a href="admin.html" target="_blank" class="px-3.5 py-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-200/60 transition-all flex items-center gap-1.5 text-xs font-bold" title="打开大厨专属后台管理网站">
           <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>后台管理 ↗
         </a>
-      </nav>
-
-      <!-- 手机端右上角快捷区：轻巧干净 -->
-      <div class="flex items-center gap-1.5 md:hidden">
-        <button onclick="surpriseMealPlan()" class="px-2.5 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/80 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
-          <span>盲盒</span>
-        </button>
-        <button onclick="shareMealPlanToChef()" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-brand-500 text-white text-xs font-bold shadow-sm shadow-rose-500/20 flex items-center gap-1 active:scale-95 transition-all">
-          <i data-lucide="send" class="w-3.5 h-3.5"></i>
-          <span>发大厨</span>
-        </button>
-      </div>
     </div>
   </header>
 
@@ -103,34 +93,31 @@
 
     <!-- 1. 周排餐面板 (Plan Tab) -->
     <section id="tab-plan" class="tab-content">
-      <!-- 顶部控制条：周切换与快捷操作 -->
+      <!-- 顶部控制条：周切换 -->
       <div class="bg-gradient-to-br from-amber-500/10 via-brand-500/5 to-rose-500/10 border border-brand-200/60 rounded-3xl p-3.5 sm:p-5 shadow-soft">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div class="flex items-center justify-between gap-2.5">
           <!-- 标题与状态 -->
-          <div class="flex items-center justify-between sm:justify-start gap-2">
-            <span id="current-week-label" class="text-xs sm:text-sm font-bold text-brand-700 bg-brand-100/90 px-3 py-1 rounded-full">本周菜单</span>
-            <span id="today-date-text" class="text-xs text-stone-500 font-medium"></span>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="current-week-label" class="text-xs sm:text-sm font-bold text-brand-700 bg-brand-100/90 px-3 py-0.5 rounded-full">本周菜单</span>
+              <span id="today-date-text" class="text-xs text-stone-500 font-medium"></span>
+            </div>
+            <h2 class="text-base sm:text-lg font-black text-stone-800 mt-1">女友点餐台 · 想吃啥点啥</h2>
           </div>
 
-          <!-- 操作按钮条 -->
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <button onclick="shareMealPlanToChef()" class="hidden sm:inline-flex px-3.5 py-1.5 bg-gradient-to-r from-rose-500 to-brand-500 text-white rounded-xl text-xs font-bold shadow-sm shadow-rose-500/20 hover:opacity-95 items-center gap-1.5 active:scale-95 transition-all" title="点击复制选好的菜单发给微信大厨">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i> 📋 发给大厨
+          <!-- 周切换按钮条 (上周 / 今天 / 下周) -->
+          <div class="flex items-center bg-white rounded-xl border border-stone-200/80 p-0.5 shadow-sm text-xs font-bold">
+            <button onclick="changeWeek(-1)" class="p-1.5 text-stone-600 hover:bg-stone-50 rounded-lg flex items-center gap-1" title="上周">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+              <span class="hidden sm:inline">上周</span>
             </button>
-            <button onclick="openImportModal()" class="px-2.5 sm:px-3.5 py-1.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1 active:scale-95 transition-all" title="粘贴女友发来的微信点菜，一键自动排入日程">
-              <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i> 📥 导入点菜
+            <button onclick="resetToCurrentWeek()" class="px-2.5 py-1 text-brand-600 hover:bg-brand-50 rounded-lg">
+              今天
             </button>
-            <div class="flex items-center bg-white rounded-xl border border-stone-200/80 p-0.5 shadow-sm text-xs font-bold">
-              <button onclick="changeWeek(-1)" class="p-1.5 text-stone-600 hover:bg-stone-50 rounded-lg" title="上周">
-                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-              </button>
-              <button onclick="resetToCurrentWeek()" class="px-2 py-1 text-brand-600 hover:bg-brand-50 rounded-lg">
-                今天
-              </button>
-              <button onclick="changeWeek(1)" class="p-1.5 text-stone-600 hover:bg-stone-50 rounded-lg" title="下周">
-                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
+            <button onclick="changeWeek(1)" class="p-1.5 text-stone-600 hover:bg-stone-50 rounded-lg flex items-center gap-1" title="下周">
+              <span class="hidden sm:inline">下周</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
         </div>
 
@@ -382,7 +369,7 @@
   </div>
 
   <!-- 手机端底部纯净 3 项导航栏（彻底告别拥挤） -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 px-6 py-2 flex items-center justify-around shadow-lg">
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 px-8 py-2 flex items-center justify-around shadow-lg">
     <button onclick="switchTab('plan')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[11px] transition-colors" data-tab="plan">
       <i data-lucide="calendar" class="w-5 h-5 mb-0.5"></i>
       <span>周排餐</span>
@@ -392,10 +379,10 @@
       <span>菜谱库</span>
     </button>
     <button onclick="switchTab('add')" class="mobile-tab-btn flex flex-col items-center py-1 text-stone-400 font-bold text-[11px] transition-colors" data-tab="add">
-      <div class="w-9 h-9 -mt-4 bg-gradient-to-tr from-brand-500 to-amber-400 rounded-full flex items-center justify-center text-white shadow-md shadow-brand-500/30">
+      <div class="w-10 h-10 -mt-4 bg-gradient-to-tr from-brand-500 to-amber-400 rounded-full flex items-center justify-center text-white shadow-md shadow-brand-500/30">
         <i data-lucide="plus" class="w-5 h-5"></i>
       </div>
-      <span class="mt-0.5">记新菜</span>
+      <span class="mt-0.5">拍新菜</span>
     </button>
   </nav>
 
@@ -405,6 +392,6 @@
     <span id="toast-message">提示内容</span>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=20260923_v5"></script>
 </body>
 </html>
