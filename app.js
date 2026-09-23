@@ -124,11 +124,6 @@ function initApp() {
   renderAdminTable();
   updateStats();
 
-  // 初始化云端数据同步引擎
-  if (typeof CloudSync !== 'undefined') {
-    CloudSync.init();
-  }
-
   // 初始化 Lucide 图标
   if (window.lucide) {
     lucide.createIcons();
@@ -176,11 +171,6 @@ function saveToStorage() {
   } catch (e) {
     console.warn('存储配额超限警告', e);
     showToast('存储警告：图片较多，建议定期导出备份！');
-  }
-
-  // 若已连接云端数据库，自动防抖同步到云端
-  if (typeof CloudSync !== 'undefined' && CloudSync.isConnected) {
-    CloudSync.debouncedPushAll();
   }
 }
 
@@ -1045,7 +1035,17 @@ function shareMealPlanToChef() {
   const dayName = daysOfWeek[dateObj.getDay()];
   const formattedDate = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日 (${dayName})`;
 
-  const shareText = `🍽️ 【${formattedDate} 点菜清单来啦！】\n☀️ 午餐：${lunchDishes}\n🌙 晚餐：${dinnerDishes}\n\n👨‍🍳 大厨请批阅，准备好大展身手啦~ ❤️`;
+  const rawLunchNames = (currentPlan.lunch || []).map(id => {
+    const d = appState.dishes.find(item => item.id === id);
+    return d ? d.name : '';
+  }).filter(Boolean).join(',');
+
+  const rawDinnerNames = (currentPlan.dinner || []).map(id => {
+    const d = appState.dishes.find(item => item.id === id);
+    return d ? d.name : '';
+  }).filter(Boolean).join(',');
+
+  const shareText = `🍽️ 【${formattedDate} 点菜清单来啦！】\n☀️ 午餐：${lunchDishes}\n🌙 晚餐：${dinnerDishes}\n\n👨‍🍳 大厨请批阅，准备好大展身手啦~ ❤️\n#吃什么:${dateStr}|${rawLunchNames}|${rawDinnerNames}#`;
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(shareText).then(() => {
@@ -1074,304 +1074,139 @@ function copyShareFallback(text) {
   document.body.removeChild(textarea);
 }
 
-// --- ☁️ 云端多端数据实时同步模块 ---
-const CloudSync = {
-  client: null,
-  isConnected: false,
-  isSyncing: false,
-  debounceTimer: null,
-
-  getConfig() {
-    try {
-      const localConf = localStorage.getItem('wt_cloud_config');
-      if (localConf) {
-        const parsed = JSON.parse(localConf);
-        if (parsed.supabaseUrl && parsed.supabaseKey) return parsed;
-      }
-    } catch (e) {}
-
-    if (window.WT_CONFIG && window.WT_CONFIG.supabaseUrl && window.WT_CONFIG.supabaseKey) {
-      return window.WT_CONFIG;
-    }
-    return null;
-  },
-
-  init() {
-    const conf = this.getConfig();
-    const urlInput = document.getElementById('cloud-url-input');
-    const keyInput = document.getElementById('cloud-key-input');
-    if (urlInput && keyInput && conf) {
-      urlInput.value = conf.supabaseUrl || '';
-      keyInput.value = conf.supabaseKey || '';
-    }
-
-    if (conf && conf.supabaseUrl && conf.supabaseKey && window.supabase) {
-      try {
-        this.client = window.supabase.createClient(conf.supabaseUrl, conf.supabaseKey);
-        this.updateBadge('syncing');
-        this.pullFromCloud(true);
-      } catch (e) {
-        console.warn('云端客户端初始化异常:', e);
-        this.updateBadge('error');
-      }
-    } else {
-      this.updateBadge('local');
-    }
-  },
-
-  async testConnection(showToastMsg = false) {
-    const conf = this.getConfig();
-    if (!conf || !conf.supabaseUrl || !conf.supabaseKey) {
-      if (showToastMsg) showToast('请先填写 Project URL 和 Anon Key！');
-      this.updateBadge('local');
-      return false;
-    }
-
-    if (!window.supabase) {
-      if (showToastMsg) showToast('云端 SDK 尚未加载完成，请刷新网页再试');
-      return false;
-    }
-
-    try {
-      this.updateBadge('syncing');
-      const tempClient = window.supabase.createClient(conf.supabaseUrl, conf.supabaseKey);
-      const { data, error } = await tempClient.from('family_store').select('key').limit(1);
-
-      if (error) {
-        console.warn('云端测试失败:', error);
-        this.isConnected = false;
-        this.updateBadge('error');
-        if (showToastMsg) {
-          if (error.code === '42P01') {
-            alert('连接成功，但尚未建立 family_store 数据表！\n请查看帮助展开栏，在控制台 SQL 编辑器中运行建表语句即可。');
-          } else {
-            alert(`连接失败：${error.message || '请检查 URL 和 Key 是否正确'}`);
-          }
-        }
-        return false;
-      }
-
-      this.client = tempClient;
-      this.isConnected = true;
-      this.updateBadge('online');
-      if (showToastMsg) showToast('🎉 云端连接成功！小两口点菜数据已打通！');
-      return true;
-    } catch (e) {
-      console.error('测试连通性出错:', e);
-      this.isConnected = false;
-      this.updateBadge('error');
-      if (showToastMsg) alert(`连接发生异常：${e.message}`);
-      return false;
-    }
-  },
-
-  async pullFromCloud(silent = false) {
-    if (!this.client) return false;
-    this.isSyncing = true;
-    this.updateBadge('syncing');
-
-    try {
-      const { data, error } = await this.client.from('family_store').select('*');
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        let hasChanges = false;
-        data.forEach(row => {
-          if (row.key === 'dishes' && Array.isArray(row.data) && row.data.length > 0) {
-            appState.dishes = row.data;
-            localStorage.setItem('wt_dishes', JSON.stringify(row.data));
-            hasChanges = true;
-          } else if (row.key === 'categories' && Array.isArray(row.data)) {
-            appState.categories = row.data;
-            localStorage.setItem('wt_categories', JSON.stringify(row.data));
-            hasChanges = true;
-          } else if (row.key === 'meal_plans' && typeof row.data === 'object') {
-            appState.mealPlans = row.data;
-            localStorage.setItem('wt_meal_plans', JSON.stringify(row.data));
-            hasChanges = true;
-          }
-        });
-
-        this.isConnected = true;
-        this.updateBadge('online');
-        if (hasChanges) {
-          renderAllViews();
-          if (!silent) showToast('✨ 已成功同步云端最新菜单与排餐！');
-        }
-        return true;
-      } else {
-        // 云端目前为空，自动将当前本地初始数据推送到云端做初始化
-        await this.pushAllToCloud(false);
-        this.isConnected = true;
-        this.updateBadge('online');
-        return true;
-      }
-    } catch (err) {
-      console.warn('从云端同步数据失败:', err);
-      this.isConnected = false;
-      this.updateBadge('error');
-      if (!silent) showToast('同步失败，请检查网络或配置');
-      return false;
-    } finally {
-      this.isSyncing = false;
-    }
-  },
-
-  debouncedPushAll() {
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => {
-      this.pushAllToCloud(false);
-    }, 600);
-  },
-
-  async pushAllToCloud(notify = true) {
-    if (!this.client || !this.isConnected) {
-      const ok = await this.testConnection(false);
-      if (!ok) return false;
-    }
-
-    try {
-      this.updateBadge('syncing');
-      const rows = [
-        { key: 'dishes', data: appState.dishes, updated_at: new Date().toISOString() },
-        { key: 'categories', data: appState.categories, updated_at: new Date().toISOString() },
-        { key: 'meal_plans', data: appState.mealPlans, updated_at: new Date().toISOString() }
-      ];
-
-      const { error } = await this.client.from('family_store').upsert(rows);
-      if (error) throw error;
-
-      this.isConnected = true;
-      this.updateBadge('online');
-      if (notify) showToast('☁️ 本地菜谱与排餐已全部推送到云端！');
-      return true;
-    } catch (e) {
-      console.error('推送到云端失败:', e);
-      this.updateBadge('error');
-      if (notify) alert(`推送失败：${e.message || '请检查数据表权限'}`);
-      return false;
-    }
-  },
-
-  updateBadge(status) {
-    const badge = document.getElementById('cloud-sync-badge');
-    const badgeMobile = document.getElementById('cloud-sync-badge-mobile');
-    const adminStatus = document.getElementById('admin-cloud-status');
-
-    let badgeClass = '';
-    let badgeHtml = '';
-    let mobileText = '';
-    let adminText = '';
-    let adminClass = '';
-
-    if (status === 'online') {
-      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-pointer hover:bg-emerald-100 transition-all';
-      badgeHtml = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>🟢 云端已连接</span>';
-      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>云端</span>';
-      adminText = '🟢 云端正常运行 (实时互通)';
-      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
-    } else if (status === 'syncing') {
-      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200';
-      badgeHtml = '<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span><span>🔄 同步中...</span>';
-      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span><span>同步</span>';
-      adminText = '🔄 正在同步数据...';
-      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200';
-    } else if (status === 'error') {
-      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 cursor-pointer hover:bg-rose-100';
-      badgeHtml = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>🔴 云端异常</span>';
-      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span><span>异常</span>';
-      adminText = '🔴 连接异常 (点击排查)';
-      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
-    } else {
-      badgeClass = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200 cursor-pointer hover:bg-stone-200/80';
-      badgeHtml = '<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>本地单机模式</span>';
-      mobileText = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span><span>单机</span>';
-      adminText = '本地单机模式 (未连接云)';
-      adminClass = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200';
-    }
-
-    if (badge) {
-      badge.className = badgeClass;
-      badge.innerHTML = badgeHtml;
-    }
-    if (badgeMobile) {
-      badgeMobile.innerHTML = mobileText;
-    }
-    if (adminStatus) {
-      adminStatus.className = adminClass;
-      adminStatus.innerHTML = adminText;
-    }
-  }
-};
-
-// --- 云端同步 UI 控制交互 ---
-function toggleCloudHelp() {
-  const panel = document.getElementById('cloud-help-panel');
-  if (panel) {
-    panel.classList.toggle('hidden');
+// --- 微信点菜清单导入功能 ---
+function openImportModal() {
+  const modal = document.getElementById('import-dish-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    const input = document.getElementById('import-text-input');
+    if (input) input.value = '';
     if (window.lucide) lucide.createIcons();
   }
 }
 
-function copyCloudSQL() {
-  const sql = `create table if not exists family_store (
-  key text primary key,
-  data jsonb not null,
-  updated_at timestamp with time zone default now()
-);
-alter table family_store enable row level security;
-create policy "Public Access" on family_store for all using (true) with check (true);`;
+function closeImportModal() {
+  const modal = document.getElementById('import-dish-modal');
+  if (modal) modal.classList.add('hidden');
+}
 
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(sql).then(() => {
-      showToast('✅ 建表 SQL 已复制到剪贴板！');
-    });
-  } else {
-    prompt('请复制建表 SQL：', sql);
+async function readFromClipboard() {
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      const text = await navigator.clipboard.readText();
+      const input = document.getElementById('import-text-input');
+      if (input && text) {
+        input.value = text;
+        showToast('已从剪贴板读取内容！');
+      }
+    } else {
+      showToast('浏览器权限限制，请直接长按输入框粘贴');
+    }
+  } catch (e) {
+    showToast('未能读取剪贴板，请长按输入框直接粘贴');
   }
 }
 
-function saveCloudConfig() {
-  const urlInput = document.getElementById('cloud-url-input');
-  const keyInput = document.getElementById('cloud-key-input');
-  const url = (urlInput ? urlInput.value.trim() : '');
-  const key = (keyInput ? keyInput.value.trim() : '');
+function findOrCreateDish(name) {
+  if (!name) return null;
+  const clean = name.trim();
+  if (!clean) return null;
+  let found = appState.dishes.find(d => d.name === clean);
+  if (!found) {
+    found = appState.dishes.find(d => d.name.includes(clean) || clean.includes(d.name));
+  }
+  if (found) return found.id;
 
-  if (!url || !key) {
-    if (confirm('确认清空云端配置并切回本地单机模式吗？')) {
-      localStorage.removeItem('wt_cloud_config');
-      CloudSync.client = null;
-      CloudSync.isConnected = false;
-      CloudSync.updateBadge('local');
-      showToast('已切换为本地单机模式');
-    }
+  const newId = 'dish_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+  const newDish = {
+    id: newId,
+    name: clean,
+    category: '家常荤菜',
+    tags: ['女友钦点'],
+    notes: '女友微信点餐录入',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now()
+  };
+  appState.dishes.unshift(newDish);
+  return newId;
+}
+
+function doImportMealPlan() {
+  const input = document.getElementById('import-text-input');
+  const text = input ? input.value.trim() : '';
+  if (!text) {
+    alert('请先粘贴微信点菜内容！');
     return;
   }
 
-  const conf = { supabaseUrl: url, supabaseKey: key };
-  localStorage.setItem('wt_cloud_config', JSON.stringify(conf));
-  showToast('云端配置已保存，正在测试连通性...');
-  CloudSync.init();
-}
+  let targetDate = appState.selectedDateStr;
+  let lunchDishNames = [];
+  let dinnerDishNames = [];
 
-function testCloudConnection() {
-  CloudSync.testConnection(true);
-}
+  // 1. 尝试匹配特征口令：#吃什么:YYYY-MM-DD|菜1,菜2|菜3,菜4#
+  const matchCode = text.match(/#吃什么:(.*?)\|?(.*?)\|(.*?)#/);
+  if (matchCode) {
+    if (matchCode[1] && /^\d{4}-\d{2}-\d{2}$/.test(matchCode[1].trim())) {
+      targetDate = matchCode[1].trim();
+    }
+    if (matchCode[2]) {
+      lunchDishNames = matchCode[2].split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (matchCode[3]) {
+      dinnerDishNames = matchCode[3].split(',').map(s => s.trim()).filter(Boolean);
+    }
+  } else {
+    // 2. 尝试从自然微信文字提取
+    const dateMatch = text.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch) {
+      targetDate = dateMatch[1];
+    } else {
+      const cnDateMatch = text.match(/(\d{1,2})月(\d{1,2})日/);
+      if (cnDateMatch) {
+        const year = new Date().getFullYear();
+        const m = String(cnDateMatch[1]).padStart(2, '0');
+        const d = String(cnDateMatch[2]).padStart(2, '0');
+        targetDate = `${year}-${m}-${d}`;
+      }
+    }
 
-function pushLocalToCloud() {
-  CloudSync.pushAllToCloud(true);
-}
+    const lunchMatch = text.match(/午餐[：:]([^\n\r#]+)/);
+    if (lunchMatch) {
+      lunchDishNames = lunchMatch[1].split(/[、,，\s+]+/).map(s => s.trim()).filter(s => s && s !== '尚未点菜（等大厨发挥~）');
+    }
 
-function pullCloudToLocal() {
-  CloudSync.pullFromCloud(false);
-}
-
-// 页面可见性或获得焦点时自动静默刷新云端最新数据
-window.addEventListener('focus', () => {
-  if (typeof CloudSync !== 'undefined' && CloudSync.isConnected && !CloudSync.isSyncing) {
-    CloudSync.pullFromCloud(true);
+    const dinnerMatch = text.match(/晚餐[：:]([^\n\r#]+)/);
+    if (dinnerMatch) {
+      dinnerDishNames = dinnerMatch[1].split(/[、,，\s+]+/).map(s => s.trim()).filter(s => s && s !== '尚未点菜（等大厨发挥~）');
+    }
   }
-});
+
+  if (lunchDishNames.length === 0 && dinnerDishNames.length === 0) {
+    alert('未能识别到有效的午餐或晚餐菜品，请确认文字内容是否包含“午餐：...”或“晚餐：...”！');
+    return;
+  }
+
+  const lunchIds = lunchDishNames.map(name => findOrCreateDish(name)).filter(Boolean);
+  const dinnerIds = dinnerDishNames.map(name => findOrCreateDish(name)).filter(Boolean);
+
+  if (!appState.mealPlans[targetDate]) {
+    appState.mealPlans[targetDate] = { lunch: [], dinner: [] };
+  }
+  appState.mealPlans[targetDate].lunch = lunchIds;
+  appState.mealPlans[targetDate].dinner = dinnerIds;
+
+  saveToStorage();
+
+  appState.selectedDateStr = targetDate;
+  closeImportModal();
+  initCalendarDates();
+  renderWeekSelector();
+  renderCurrentDayMeals();
+  renderAdminTable();
+  updateStats();
+
+  showToast('🎉 女友点菜已成功排入日历！大厨开始准备大餐吧~');
+}
 
 // --- 轻量 Toast 提示系统 ---
 let toastTimer = null;
