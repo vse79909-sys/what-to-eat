@@ -343,7 +343,7 @@ function renderAdminDishesTable(filteredList = null) {
   if (list.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="py-12 text-center text-slate-400">
+        <td colspan="4" class="py-12 text-center text-slate-400">
           <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-300 mb-1.5 stroke-1"></i>
           <p class="text-xs font-bold text-slate-500">没有找到匹配的菜品</p>
         </td>
@@ -365,16 +365,6 @@ function renderAdminDishesTable(filteredList = null) {
         </td>
         <td class="py-2.5 px-3">
           <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold">${dish.category}</span>
-        </td>
-        <td class="py-2.5 px-3">
-          <div class="flex flex-wrap gap-1 max-w-[180px]">
-            ${(dish.tags || []).map(t => `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">${t}</span>`).join('')}
-          </div>
-        </td>
-        <td class="py-2.5 px-3 max-w-[160px]">
-          <p class="text-[10px] text-slate-500 truncate" title="${dish.notes || ''}">
-            ${dish.notes ? `“${dish.notes}”` : '<span class="text-slate-300">暂无备忘</span>'}
-          </p>
         </td>
         <td class="py-2.5 px-3 text-right">
           <div class="flex items-center justify-end gap-1.5">
@@ -403,8 +393,7 @@ function filterAdminDishes() {
     const matchCat = (cat === '全部') || (d.category === cat);
     const matchKey = !keyword || 
       d.name.toLowerCase().includes(keyword) ||
-      d.category.toLowerCase().includes(keyword) ||
-      (d.tags || []).some(t => t.toLowerCase().includes(keyword));
+      d.category.toLowerCase().includes(keyword);
     return matchCat && matchKey;
   });
 
@@ -435,8 +424,6 @@ function openEditDishModal(dishId) {
   document.getElementById('modal-title').textContent = `编辑菜品：${dish.name}`;
   document.getElementById('modal-dish-id').value = dish.id;
   document.getElementById('modal-dish-name').value = dish.name;
-  document.getElementById('modal-dish-tags').value = (dish.tags || []).join(' ');
-  document.getElementById('modal-dish-notes').value = dish.notes || '';
   document.getElementById('modal-dish-img-preview').src = dish.image;
   adminState.tempUploadImage = dish.image;
 
@@ -450,8 +437,6 @@ function openAddNewDishModal() {
   document.getElementById('modal-title').textContent = '录入新菜品';
   document.getElementById('modal-dish-id').value = '';
   document.getElementById('modal-dish-name').value = '';
-  document.getElementById('modal-dish-tags').value = '';
-  document.getElementById('modal-dish-notes').value = '';
   document.getElementById('modal-dish-img-preview').src = 'dishes/dish_01.jpg';
   adminState.tempUploadImage = 'dishes/dish_01.jpg';
 
@@ -496,15 +481,11 @@ function submitModalDish() {
   const id = document.getElementById('modal-dish-id').value.trim();
   const name = document.getElementById('modal-dish-name').value.trim();
   const category = document.getElementById('modal-dish-category').value;
-  const tagsStr = document.getElementById('modal-dish-tags').value.trim();
-  const notes = document.getElementById('modal-dish-notes').value.trim();
 
   if (!name) {
     alert('请输入菜品名称！');
     return;
   }
-
-  const tags = tagsStr ? tagsStr.split(/[\s,，]+/).filter(Boolean) : [];
 
   if (id) {
     // 编辑现有菜品
@@ -514,8 +495,6 @@ function submitModalDish() {
         ...adminState.dishes[idx],
         name,
         category,
-        tags,
-        notes,
         image: adminState.tempUploadImage || adminState.dishes[idx].image
       };
       showAdminToast(`已成功保存【${name}】！`);
@@ -527,8 +506,8 @@ function submitModalDish() {
       id: newId,
       name,
       category,
-      tags,
-      notes,
+      tags: [],
+      notes: '',
       image: adminState.tempUploadImage || 'dishes/dish_01.jpg',
       createdAt: Date.now()
     };

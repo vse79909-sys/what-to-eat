@@ -729,8 +729,7 @@ function filterPickerDishes() {
     const matchCat = (currentCat === '全部') || (d.category === currentCat);
     const matchKey = !keyword || 
       d.name.toLowerCase().includes(keyword) ||
-      d.category.toLowerCase().includes(keyword) ||
-      (d.tags || []).some(t => t.toLowerCase().includes(keyword));
+      d.category.toLowerCase().includes(keyword);
     return matchCat && matchKey;
   });
   renderPickerDishes(filtered);
@@ -759,7 +758,6 @@ function renderPickerDishes(dishList) {
             <span class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/60 text-white backdrop-blur-sm">${dish.category}</span>
           </div>
           <h4 class="text-xs font-black text-stone-900 truncate mb-1">${dish.name}</h4>
-          <p class="text-[10px] text-stone-400 truncate">${(dish.tags || []).join(' · ')}</p>
         </div>
         <button type="button" class="mt-2 w-full py-1 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 shadow-sm">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i> 加入
@@ -864,8 +862,7 @@ function filterDishes() {
     const matchCat = (currentCat === '全部') || (dish.category === currentCat);
     const matchKeyword = !keyword || 
       dish.name.toLowerCase().includes(keyword) ||
-      dish.category.toLowerCase().includes(keyword) ||
-      (dish.tags || []).some(t => t.toLowerCase().includes(keyword));
+      dish.category.toLowerCase().includes(keyword);
     return matchCat && matchKeyword;
   });
 
@@ -899,11 +896,7 @@ function renderDishesGrid(list = null) {
             <span class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 text-white backdrop-blur-md">${dish.category}</span>
           </div>
           <div class="card-info-wrap p-3">
-            <h3 class="font-black text-stone-900 text-sm truncate mb-1">${dish.name}</h3>
-            <div class="flex flex-wrap gap-1 mb-1.5">
-              ${(dish.tags || []).slice(0, 3).map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">${tag}</span>`).join('')}
-            </div>
-            ${dish.notes ? `<p class="text-[10px] text-stone-400 line-clamp-1 italic">“${dish.notes}”</p>` : ''}
+            <h3 class="font-black text-stone-900 text-sm truncate">${dish.name}</h3>
           </div>
         </div>
         <div class="card-action-btn p-2.5 pt-0 border-t border-stone-50 flex gap-1.5">
@@ -1037,17 +1030,14 @@ function saveNewDish() {
   // 如果没有拍照，使用精美的默认美食图片占位
   const photo = appState.tempUploadImage || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
   const category = catSelect.value || appState.categories[0];
-  const tags = (tagsInput.value || '')
-    .split(/[,，\s]+/)
-    .map(t => t.trim())
-    .filter(Boolean);
-  const notes = (notesInput.value || '').trim();
+  const tags = tagsInput ? (tagsInput.value || '').split(/[,，\s]+/).map(t => t.trim()).filter(Boolean) : [];
+  const notes = notesInput ? (notesInput.value || '').trim() : '';
 
   const newDish = {
     id: 'dish_' + Date.now(),
     name,
     category,
-    tags: tags.length > 0 ? tags : ['大厨拿手'],
+    tags,
     notes,
     image: photo,
     createdAt: Date.now()
@@ -1058,8 +1048,8 @@ function saveNewDish() {
 
   // 重置表单
   nameInput.value = '';
-  tagsInput.value = '';
-  notesInput.value = '';
+  if (tagsInput) tagsInput.value = '';
+  if (notesInput) notesInput.value = '';
   appState.tempUploadImage = '';
   const previewImg = document.getElementById('photo-preview-img');
   const placeholder = document.getElementById('upload-placeholder');
