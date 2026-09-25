@@ -858,7 +858,7 @@ function renderCategoryFilterBar() {
   if (!container) return;
 
   const allCats = ['全部', ...appState.categories];
-  container.innerHTML = allCats.map(cat => {
+  const pills = allCats.map(cat => {
     const isActive = appState.activeCategoryFilter === cat;
     return `
       <button onclick="setCategoryFilter('${cat}')" 
@@ -871,6 +871,16 @@ function renderCategoryFilterBar() {
       </button>
     `;
   }).join('');
+
+  const manageBtn = `
+    <button onclick="openCategoryManageModal()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 flex items-center gap-1 shadow-2xs active:scale-95 transition-all">
+      <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+      <span>管理分类</span>
+    </button>
+  `;
+
+  container.innerHTML = pills + manageBtn;
+  if (window.lucide) lucide.createIcons();
 }
 
 function setCategoryFilter(cat) {
@@ -921,9 +931,17 @@ function renderDishesGrid(list = null) {
           <div class="card-thumb-wrap relative w-full aspect-[4/3] bg-stone-100 overflow-hidden">
             <img src="${dish.image}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             <span class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 text-white backdrop-blur-md">${dish.category}</span>
+            <button type="button" onclick="event.stopPropagation(); openEditDishModalMobile('${dish.id}')" title="编辑修改这道菜" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/75 backdrop-blur-md text-white flex items-center justify-center transition-all shadow-sm active:scale-90">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
           <div class="card-info-wrap p-3">
-            <h3 class="font-black text-stone-900 text-sm truncate">${dish.name}</h3>
+            <div class="flex items-center justify-between gap-1">
+              <h3 class="font-black text-stone-900 text-sm truncate">${dish.name}</h3>
+              <button type="button" onclick="event.stopPropagation(); openEditDishModalMobile('${dish.id}')" class="text-stone-400 hover:text-stone-700 text-[11px] font-bold px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 transition-colors flex-shrink-0">
+                修改
+              </button>
+            </div>
             ${dish.notes ? `<p class="text-[11px] text-amber-800 font-medium truncate mt-1 bg-amber-50/90 px-1.5 py-0.5 rounded-md flex items-center gap-1"><span class="text-[10px]">📝</span>${dish.notes}</p>` : ''}
           </div>
         </div>
@@ -1119,6 +1137,233 @@ function saveNewDish() {
 
   showToast(`🎉 成功收录【${name}】到菜谱库！`);
   switchTab('dishes');
+}
+
+// ==========================================
+// 📱 手机端：菜品信息编辑与删除
+// ==========================================
+
+function openEditDishModalMobile(dishId) {
+  const dish = appState.dishes.find(d => d.id === dishId);
+  if (!dish) return;
+
+  const modal = document.getElementById('mobile-edit-dish-modal');
+  if (!modal) return;
+
+  document.getElementById('mobile-edit-dish-id').value = dish.id;
+  document.getElementById('mobile-edit-dish-name').value = dish.name;
+  document.getElementById('mobile-edit-dish-notes').value = dish.notes || '';
+  document.getElementById('mobile-edit-dish-preview').src = dish.image;
+  appState.tempEditImage = dish.image;
+
+  // 填充分类下拉框并选中当前分类
+  renderCategorySelectOptions('mobile-edit-dish-category', dish.category);
+
+  modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeMobileEditDishModal() {
+  const modal = document.getElementById('mobile-edit-dish-modal');
+  if (modal) modal.classList.add('hidden');
+  const fileInput = document.getElementById('mobile-edit-photo-input');
+  if (fileInput) fileInput.value = '';
+}
+
+function triggerMobileEditPhotoInput() {
+  const input = document.getElementById('mobile-edit-photo-input');
+  if (input) input.click();
+}
+
+function handleMobileEditPhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const rawDataUrl = e.target.result;
+    compressImage(rawDataUrl, 800, 0.75, (compressedBase64) => {
+      appState.tempEditImage = compressedBase64;
+      const preview = document.getElementById('mobile-edit-dish-preview');
+      if (preview) preview.src = compressedBase64;
+      showToast('📸 照片已选好！点击下方保存修改生效');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function appendMobileEditTasteNote(text) {
+  const input = document.getElementById('mobile-edit-dish-notes');
+  if (!input) return;
+  const current = input.value.trim();
+  if (!current) {
+    input.value = text;
+  } else if (!current.includes(text)) {
+    input.value = current + '，' + text;
+  }
+}
+
+function saveMobileEditDish() {
+  const id = document.getElementById('mobile-edit-dish-id').value;
+  const nameInput = document.getElementById('mobile-edit-dish-name');
+  const catSelect = document.getElementById('mobile-edit-dish-category');
+  const notesInput = document.getElementById('mobile-edit-dish-notes');
+
+  const name = (nameInput?.value || '').trim();
+  if (!name) {
+    showToast('菜品名称不能为空哦~');
+    nameInput?.focus();
+    return;
+  }
+
+  const category = catSelect?.value || appState.categories[0];
+  const notes = (notesInput?.value || '').trim();
+
+  const idx = appState.dishes.findIndex(d => d.id === id);
+  if (idx !== -1) {
+    appState.dishes[idx] = {
+      ...appState.dishes[idx],
+      name,
+      category,
+      notes,
+      image: appState.tempEditImage || appState.dishes[idx].image
+    };
+    saveToStorage();
+    closeMobileEditDishModal();
+    renderDishesGrid();
+    renderCurrentDayMeals();
+    showToast(`✅ 菜品【${name}】修改成功！`);
+  }
+}
+
+function deleteMobileDishConfirm() {
+  const id = document.getElementById('mobile-edit-dish-id').value;
+  const dish = appState.dishes.find(d => d.id === id);
+  if (!dish) return;
+
+  if (confirm(`确定要彻底删除【${dish.name}】吗？删除后菜谱和排餐均会移除。`)) {
+    appState.dishes = appState.dishes.filter(d => d.id !== id);
+
+    // 清理排餐中已选的该菜品
+    Object.keys(appState.mealPlans).forEach(dateKey => {
+      const plan = appState.mealPlans[dateKey];
+      if (plan.lunch) plan.lunch = plan.lunch.filter(dId => dId !== id);
+      if (plan.dinner) plan.dinner = plan.dinner.filter(dId => dId !== id);
+    });
+
+    saveToStorage();
+    closeMobileEditDishModal();
+    renderDishesGrid();
+    renderCurrentDayMeals();
+    renderWeekSelector();
+    showToast(`🗑️ 已成功删除【${dish.name}】`);
+  }
+}
+
+// ==========================================
+// 🏷️ 手机端：分类添加与删除管理
+// ==========================================
+
+function openCategoryManageModal() {
+  const modal = document.getElementById('mobile-category-modal');
+  if (!modal) return;
+
+  renderMobileCategoriesList();
+  modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeCategoryManageModal() {
+  const modal = document.getElementById('mobile-category-modal');
+  if (modal) modal.classList.add('hidden');
+
+  renderCategoryFilterBar();
+  renderCategorySelectOptions('new-dish-category');
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderMobileCategoriesList() {
+  const container = document.getElementById('mobile-categories-list');
+  if (!container) return;
+
+  container.innerHTML = appState.categories.map(cat => {
+    const count = appState.dishes.filter(d => d.category === cat).length;
+    return `
+      <div class="flex items-center justify-between p-3 bg-stone-50 border border-stone-200/80 rounded-2xl shadow-xs">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+          <span class="font-bold text-stone-800 text-xs sm:text-sm">${cat}</span>
+          <span class="text-[10px] text-stone-500 bg-white px-2 py-0.5 rounded-full border border-stone-200 font-semibold">${count} 道菜</span>
+        </div>
+        <button type="button" onclick="deleteMobileCategoryConfirm('${cat}')" class="text-stone-400 hover:text-rose-600 p-1.5 rounded-xl hover:bg-rose-50 transition-colors flex items-center gap-1 text-xs" title="删除该分类">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function addNewCategoryFromMobile() {
+  const input = document.getElementById('new-category-input');
+  const val = (input ? input.value : '').trim();
+  if (!val) {
+    showToast('请输入要添加的分类名称哦~');
+    input?.focus();
+    return;
+  }
+
+  if (appState.categories.includes(val)) {
+    showToast('该分类已经存在啦！');
+    return;
+  }
+
+  appState.categories.push(val);
+  input.value = '';
+  saveToStorage();
+  renderMobileCategoriesList();
+  renderCategoryFilterBar();
+  renderCategorySelectOptions('new-dish-category');
+  showToast(`🎉 成功添加新分类【${val}】！`);
+}
+
+function deleteMobileCategoryConfirm(catName) {
+  if (appState.categories.length <= 1) {
+    showToast('至少保留一个分类哦！');
+    return;
+  }
+
+  const count = appState.dishes.filter(d => d.category === catName).length;
+  const remainingCats = appState.categories.filter(c => c !== catName);
+  const fallbackCat = remainingCats[0];
+
+  let msg = `确定要删除分类【${catName}】吗？`;
+  if (count > 0) {
+    msg = `该分类下有 ${count} 道菜品，删除后这些菜品将自动归入【${fallbackCat}】，确定删除吗？`;
+  }
+
+  if (confirm(msg)) {
+    if (count > 0) {
+      appState.dishes.forEach(d => {
+        if (d.category === catName) {
+          d.category = fallbackCat;
+        }
+      });
+    }
+
+    appState.categories = remainingCats;
+    if (appState.activeCategoryFilter === catName) {
+      appState.activeCategoryFilter = '全部';
+    }
+
+    saveToStorage();
+    renderMobileCategoriesList();
+    renderCategoryFilterBar();
+    renderCategorySelectOptions('new-dish-category');
+    renderDishesGrid();
+    showToast(`已删除分类【${catName}】`);
+  }
 }
 
 // --- 管理后台 (Admin) 功能 ---
