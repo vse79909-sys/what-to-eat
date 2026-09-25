@@ -4,9 +4,9 @@
  */
 
 // --- 菜谱版本与初始预置数据 ---
-const CURRENT_MENU_VERSION = '2026_09_23_v24';
+const CURRENT_MENU_VERSION = '2026_09_25_v25';
 
-const DEFAULT_CATEGORIES = ['家常荤菜', '清爽素菜', '拿手硬菜', '主食简餐'];
+const DEFAULT_CATEGORIES = ['家常荤菜', '清爽素菜', '拿手硬菜', '主食简餐', '奶茶甜品', '团购外卖'];
 
 const DEFAULT_DISHES = [
   {
@@ -206,6 +206,24 @@ const DEFAULT_DISHES = [
     notes: '火腿切厚片先两面煎出微微焦香边，青椒大火合炒爽脆甜辣',
     image: 'dishes/dish_22.jpg',
     createdAt: Date.now() - 10000
+  },
+  {
+    id: 'dish_23',
+    name: '杨枝甘露',
+    category: '奶茶甜品',
+    tags: ['清凉解暑', '芒果香甜', '下午茶'],
+    notes: '七分甜少冰，西柚粒爆汁清爽',
+    image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 5000
+  },
+  {
+    id: 'dish_24',
+    name: '疯狂烤全鸡',
+    category: '团购外卖',
+    tags: ['懒人外卖', '外酥里嫩', '解馋肉食'],
+    notes: '微辣趁热吃，外皮酥脆汁水丰盈',
+    image: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=600&q=80',
+    createdAt: Date.now() - 2000
   }
 ];
 
@@ -387,26 +405,41 @@ function loadFromStorage() {
     const savedPlans = localStorage.getItem('wt_meal_plans');
 
     if (savedVersion !== CURRENT_MENU_VERSION) {
-      // 自动升级到全新 22 道大厨实拍菜谱
+      // 自动升级到全新 24 道精选菜谱（含奶茶甜品与团购外卖分类）
       let preservedCustom = [];
       if (savedDishes) {
         try {
           const parsed = JSON.parse(savedDishes);
-          // 过滤掉旧的 10 道 unsplash 示范菜，保留用户后续自己录入的菜品
-          preservedCustom = parsed.filter(d => !d.image || !d.image.includes('unsplash.com'));
+          // 保留用户自己拍照或录入的个性化菜品
+          preservedCustom = parsed.filter(d => !DEFAULT_DISHES.some(def => def.id === d.id));
         } catch (e) {}
       }
 
-      // 合并：以新 22 道菜为主，保留用户自己的新增菜
-      appState.dishes = [...DEFAULT_DISHES, ...preservedCustom.filter(c => !DEFAULT_DISHES.some(d => d.id === c.id))];
-      appState.categories = DEFAULT_CATEGORIES;
+      // 合并：默认菜谱 + 用户自己的新增菜
+      appState.dishes = [...DEFAULT_DISHES, ...preservedCustom];
+
+      // 确保包含新分类，同时保留用户自建分类
+      let currentCats = [];
+      if (savedCats) {
+        try { currentCats = JSON.parse(savedCats); } catch (e) {}
+      }
+      let mergedCats = [...DEFAULT_CATEGORIES];
+      currentCats.forEach(c => {
+        if (!mergedCats.includes(c)) mergedCats.push(c);
+      });
+      appState.categories = mergedCats;
+
       appState.mealPlans = savedPlans ? JSON.parse(savedPlans) : {};
 
       localStorage.setItem('wt_menu_version', CURRENT_MENU_VERSION);
       saveToStorage();
     } else {
       appState.dishes = savedDishes ? JSON.parse(savedDishes) : DEFAULT_DISHES;
-      appState.categories = savedCats ? JSON.parse(savedCats) : DEFAULT_CATEGORIES;
+      let loadedCats = savedCats ? JSON.parse(savedCats) : DEFAULT_CATEGORIES;
+      DEFAULT_CATEGORIES.forEach(c => {
+        if (!loadedCats.includes(c)) loadedCats.push(c);
+      });
+      appState.categories = loadedCats;
       appState.mealPlans = savedPlans ? JSON.parse(savedPlans) : {};
     }
   } catch (e) {
@@ -631,9 +664,9 @@ function renderMealDishesList(dishIds = [], mealType) {
           <img src="${dish.image}" alt="${dish.name}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm">
           <div class="min-w-0">
             <h4 class="text-sm font-black text-stone-900 truncate">${dish.name}</h4>
-            <div class="flex flex-wrap gap-1 mt-0.5">
+            <div class="flex flex-wrap items-center gap-1 mt-0.5">
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100/70 text-amber-700 font-bold">${dish.category}</span>
-              ${(dish.tags || []).slice(0, 2).map(tag => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-200/60 text-stone-600">${tag}</span>`).join('')}
+              ${dish.notes ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-orange-100/80 text-orange-700 font-bold max-w-[140px] truncate">📝 ${dish.notes}</span>` : ''}
             </div>
           </div>
         </div>
@@ -729,7 +762,8 @@ function filterPickerDishes() {
     const matchCat = (currentCat === '全部') || (d.category === currentCat);
     const matchKey = !keyword || 
       d.name.toLowerCase().includes(keyword) ||
-      d.category.toLowerCase().includes(keyword);
+      d.category.toLowerCase().includes(keyword) ||
+      (d.notes && d.notes.toLowerCase().includes(keyword));
     return matchCat && matchKey;
   });
   renderPickerDishes(filtered);
@@ -757,7 +791,8 @@ function renderPickerDishes(dishList) {
             <img src="${dish.image}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             <span class="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/60 text-white backdrop-blur-sm">${dish.category}</span>
           </div>
-          <h4 class="text-xs font-black text-stone-900 truncate mb-1">${dish.name}</h4>
+          <h4 class="text-xs font-black text-stone-900 truncate mb-0.5">${dish.name}</h4>
+          ${dish.notes ? `<p class="text-[10px] text-amber-700 font-medium truncate mb-1">📝 ${dish.notes}</p>` : ''}
         </div>
         <button type="button" class="mt-2 w-full py-1 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 shadow-sm">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i> 加入
@@ -862,7 +897,8 @@ function filterDishes() {
     const matchCat = (currentCat === '全部') || (dish.category === currentCat);
     const matchKeyword = !keyword || 
       dish.name.toLowerCase().includes(keyword) ||
-      dish.category.toLowerCase().includes(keyword);
+      dish.category.toLowerCase().includes(keyword) ||
+      (dish.notes && dish.notes.toLowerCase().includes(keyword));
     return matchCat && matchKeyword;
   });
 
@@ -897,6 +933,7 @@ function renderDishesGrid(list = null) {
           </div>
           <div class="card-info-wrap p-3">
             <h3 class="font-black text-stone-900 text-sm truncate">${dish.name}</h3>
+            ${dish.notes ? `<p class="text-[11px] text-amber-800 font-medium truncate mt-1 bg-amber-50/90 px-1.5 py-0.5 rounded-md flex items-center gap-1"><span class="text-[10px]">📝</span>${dish.notes}</p>` : ''}
           </div>
         </div>
         <div class="card-action-btn p-2.5 pt-0 border-t border-stone-50 flex gap-1.5">
@@ -1013,6 +1050,17 @@ function appendTag(tagText) {
   if (!tags.includes(tagText)) {
     tags.push(tagText);
     input.value = tags.join(', ');
+  }
+}
+
+function appendTasteNote(text) {
+  const input = document.getElementById('new-dish-notes');
+  if (!input) return;
+  const current = input.value.trim();
+  if (!current) {
+    input.value = text;
+  } else if (!current.includes(text)) {
+    input.value = current + '，' + text;
   }
 }
 
@@ -1334,7 +1382,8 @@ function shareMealPlanToChef() {
     if (!ids || ids.length === 0) return '尚未点菜（等大厨发挥~）';
     const names = ids.map(id => {
       const d = appState.dishes.find(item => item.id === id);
-      return d ? d.name : '';
+      if (!d) return '';
+      return d.notes ? `${d.name} (${d.notes})` : d.name;
     }).filter(Boolean);
     return names.length > 0 ? names.join('、') : '尚未点菜（等大厨发挥~）';
   };
