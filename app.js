@@ -4,7 +4,7 @@
  */
 
 // --- 菜谱版本与初始预置数据 ---
-const CURRENT_MENU_VERSION = '2026_09_25_v25';
+const CURRENT_MENU_VERSION = '2026_09_25_v26';
 
 const DEFAULT_CATEGORIES = ['家常荤菜', '清爽素菜', '拿手硬菜', '主食简餐', '奶茶甜品', '团购外卖'];
 
@@ -206,24 +206,6 @@ const DEFAULT_DISHES = [
     notes: '火腿切厚片先两面煎出微微焦香边，青椒大火合炒爽脆甜辣',
     image: 'dishes/dish_22.jpg',
     createdAt: Date.now() - 10000
-  },
-  {
-    id: 'dish_23',
-    name: '杨枝甘露',
-    category: '奶茶甜品',
-    tags: ['清凉解暑', '芒果香甜', '下午茶'],
-    notes: '七分甜少冰，西柚粒爆汁清爽',
-    image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=600&q=80',
-    createdAt: Date.now() - 5000
-  },
-  {
-    id: 'dish_24',
-    name: '疯狂烤全鸡',
-    category: '团购外卖',
-    tags: ['懒人外卖', '外酥里嫩', '解馋肉食'],
-    notes: '微辣趁热吃，外皮酥脆汁水丰盈',
-    image: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=600&q=80',
-    createdAt: Date.now() - 2000
   }
 ];
 
@@ -410,8 +392,14 @@ function loadFromStorage() {
       if (savedDishes) {
         try {
           const parsed = JSON.parse(savedDishes);
-          // 保留用户自己拍照或录入的个性化菜品
-          preservedCustom = parsed.filter(d => !DEFAULT_DISHES.some(def => def.id === d.id));
+          // 保留用户自己拍照或录入的个性化菜品，排除已删除的 杨枝甘露 和 疯狂烤全鸡
+          preservedCustom = parsed.filter(d => 
+            d.id !== 'dish_23' && 
+            d.id !== 'dish_24' && 
+            d.name !== '杨枝甘露' && 
+            d.name !== '疯狂烤全鸡' &&
+            !DEFAULT_DISHES.some(def => def.id === d.id)
+          );
         } catch (e) {}
       }
 
@@ -434,7 +422,10 @@ function loadFromStorage() {
       localStorage.setItem('wt_menu_version', CURRENT_MENU_VERSION);
       saveToStorage();
     } else {
-      appState.dishes = savedDishes ? JSON.parse(savedDishes) : DEFAULT_DISHES;
+      let rawDishes = savedDishes ? JSON.parse(savedDishes) : DEFAULT_DISHES;
+      appState.dishes = rawDishes.filter(d => 
+        d.id !== 'dish_23' && d.id !== 'dish_24' && d.name !== '杨枝甘露' && d.name !== '疯狂烤全鸡'
+      );
       let loadedCats = savedCats ? JSON.parse(savedCats) : DEFAULT_CATEGORIES;
       DEFAULT_CATEGORIES.forEach(c => {
         if (!loadedCats.includes(c)) loadedCats.push(c);
